@@ -1,0 +1,8 @@
+[
+  {
+    "name": "GLiNER (stub: regex-stub)",
+    "latency_ms": 0.1,
+    "cost_per_call_usd": 0.0,
+    "f1": 0.444
+  }
+]

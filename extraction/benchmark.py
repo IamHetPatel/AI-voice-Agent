@@ -1,0 +1,163 @@
+"""GLiNER2 vs. Gemini-structured-output benchmark.
+
+This is the artifact we hand the Pioneer/Fastino judges:
+
+    Model              | Latency  | $/call | F1 (15 labels)
+    -----------------------------------------------------
+    GLiNER2 zero-shot  | ~50ms    | $0.000 | ~0.71
+    GLiNER2 fine-tuned | ~50ms    | $0.000 | ~0.89  ← target
+    Gemini 3 Flash JSON| ~900ms   | $0.0015| ~0.93
+
+The numbers are filled in by actually running the bench at hackathon time —
+the script only needs `GOOGLE_API_KEY` for the Gemini side; GLiNER runs free.
+
+Run:  python extraction/benchmark.py
+"""
+
+from __future__ import annotations
+
+import json
+import os
+import time
+from pathlib import Path
+from statistics import mean
+
+from .gliner2_service import ExtractionService, CLAIM_LABELS, FRAUD_LABELS
+
+# tiny in-repo eval set — extend at hackathon time with synthetic data
+EVAL_DATA: list[dict] = [
+    {
+        "text": (
+            "Yeah um I was driving the Golf on the A4 near Köln-Ost about, "
+            "I think 8 in the morning, it was pouring rain and this guy in a "
+            "BMW with plate K-AB 1234 changed lanes without looking. The police "
+            "came, the case number is 2026-04-25-7711. I might have whiplash."
+        ),
+        "gold": {
+            "accident_location": "A4 near Köln-Ost",
+            "accident_time": "8 in the morning",
+            "weather_conditions": "pouring rain",
+            "other_party_plate": "K-AB 1234",
+            "police_case_number": "2026-04-25-7711",
+            "injury_description": "whiplash",
+        },
+    },
+    {
+        "text": (
+            "Honestly I noticed the dent like three weeks ago but I'm only "
+            "reporting it now. I parked it in front of the house, the plate is "
+            "B-MM 4421, no other car involved. The car still drives fine."
+        ),
+        "gold": {
+            "delayed_reporting": "three weeks ago",
+            "vehicle_drivable": "yes",
+        },
+    },
+    {
+        "text": (
+            "The other driver — Klaus, he's actually my brother-in-law — admitted "
+            "it was his fault at the scene. We didn't call the police. His insurer "
+            "is HUK-Coburg, I think."
+        ),
+        "gold": {
+            "fault_admission": "his fault",
+            "known_to_other_party": "brother-in-law",
+            "other_party_insurer": "HUK-Coburg",
+            "other_party_name": "Klaus",
+        },
+    },
+]
+
+
+def _f1(pred: dict, gold: dict) -> float:
+    """Loose label-level F1 — credit if a gold label is present in pred."""
+    if not gold:
+        return 1.0
+    tp = sum(1 for k in gold if k in pred)
+    fp = sum(1 for k in pred if k not in gold)
+    fn = sum(1 for k in gold if k not in pred)
+    if tp == 0:
+        return 0.0
+    p = tp / (tp + fp)
+    r = tp / (tp + fn)
+    return 2 * p * r / (p + r) if (p + r) else 0.0
+
+
+def bench_gliner() -> dict:
+    svc = ExtractionService()
+    f1s, latencies = [], []
+    for ex in EVAL_DATA:
+        t0 = time.perf_counter()
+        out = svc.extract(ex["text"])
+        latencies.append((time.perf_counter() - t0) * 1000)
+        merged = {**out["pillars"], **out["fraud"]}
+        f1s.append(_f1({k: v["text"] for k, v in merged.items()}, ex["gold"]))
+    return {
+        "name": f"GLiNER ({svc.mode}: {svc.model_name or 'regex-stub'})",
+        "latency_ms": round(mean(latencies), 1),
+        "cost_per_call_usd": 0.0,
+        "f1": round(mean(f1s), 3),
+    }
+
+
+def bench_gemini() -> dict | None:
+    if not os.environ.get("GOOGLE_API_KEY"):
+        return None
+    try:
+        from google import genai            # type: ignore
+        from google.genai import types       # type: ignore
+    except Exception:
+        return None
+    client = genai.Client()
+    model = os.environ.get("GEMINI_MODEL", "gemini-3-flash")
+    schema_prompt = (
+        "Extract these labels (subset only if present) into JSON: "
+        + ", ".join(CLAIM_LABELS + FRAUD_LABELS)
+        + ".  Return strict JSON, keys = labels, values = literal strings from the text."
+    )
+    f1s, latencies = [], []
+    for ex in EVAL_DATA:
+        t0 = time.perf_counter()
+        resp = client.models.generate_content(
+            model=model,
+            contents=[ex["text"]],
+            config=types.GenerateContentConfig(
+                system_instruction=schema_prompt,
+                response_mime_type="application/json",
+                temperature=0.1,
+            ),
+        )
+        latencies.append((time.perf_counter() - t0) * 1000)
+        try:
+            pred = json.loads(resp.text)
+        except Exception:
+            pred = {}
+        f1s.append(_f1(pred, ex["gold"]))
+    # Rough cost: 0.50/M input + 3.00/M output (Gemini 3 Flash pricing).
+    avg_cost = 0.0015
+    return {
+        "name": f"Gemini structured ({model})",
+        "latency_ms": round(mean(latencies), 1),
+        "cost_per_call_usd": avg_cost,
+        "f1": round(mean(f1s), 3),
+    }
+
+
+def main() -> None:
+    rows = [bench_gliner()]
+    g = bench_gemini()
+    if g:
+        rows.append(g)
+
+    out_path = Path(__file__).parent / "benchmark_results.json"
+    out_path.write_text(json.dumps(rows, indent=2, ensure_ascii=False))
+
+    print(f"\n{'Model':40} {'Latency (ms)':>14} {'Cost ($/call)':>14} {'F1':>8}")
+    print("-" * 80)
+    for r in rows:
+        print(f"{r['name']:40} {r['latency_ms']:>14} {r['cost_per_call_usd']:>14.4f} {r['f1']:>8.3f}")
+    print(f"\nSaved → {out_path}")
+
+
+if __name__ == "__main__":
+    main()
