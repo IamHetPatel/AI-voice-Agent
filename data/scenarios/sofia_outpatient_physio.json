@@ -1,0 +1,18 @@
+{
+  "name": "sofia_outpatient_physio",
+  "domain": "health_insurance_claim",
+  "crm_profile": "sofia_health_claim",
+  "description": "Privately-insured member submitting an outpatient physiotherapy course (post-knee surgery).  Member already has the Rechnung but isn't sure about prior authorization.  Tests: domain-specific extractor (physio not 'accident'), CRM-aware dialog (we already see her ytd_sessions: 6/24), correct payout-IBAN handling.",
+  "expected_pillars": [
+    "treatment_type", "treatment_date_or_range", "provider_name",
+    "diagnosis_summary", "amount_invoiced", "documents_in_hand",
+    "preferred_payout_iban"
+  ],
+  "caller_turns": [
+    "Hi, I'd like to submit a claim — for physiotherapy.  I had knee surgery in February and the doc prescribed twelve sessions.",
+    "The course ran from March 3rd to April 18th, at PhysioMitte over by Mehringdamm.  Therapist's name is Andreas Wolters.",
+    "The total invoice is 612 euros.  I've got the Rechnung in PDF and the prescription from my orthopedic surgeon.",
+    "Honestly I don't know if I needed prior authorization — my surgeon just handed me the Rezept and said go book it.",
+    "Could you reimburse to the same IBAN as last time?  Should be the one ending 6677."
+  ]
+}

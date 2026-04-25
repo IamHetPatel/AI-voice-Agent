@@ -1,0 +1,19 @@
+{
+  "name": "jonas_bike_theft",
+  "domain": "theft_claim",
+  "crm_profile": "jonas_theft_claim",
+  "description": "Bicycle theft outside a Späti in Neukölln.  Lock was U-lock — covered.  Member is upset, blaming himself.  Tests: empathy first ('not on you'), CRM-aware response (we already see his Canyon Endurace registered with serial number), correct extraction of items_stolen and police_case_number.",
+  "expected_pillars": [
+    "incident_type", "incident_datetime", "incident_location",
+    "items_stolen", "force_or_break_in", "police_case_number",
+    "documents_or_photos"
+  ],
+  "caller_turns": [
+    "Hi, I — I just had my bike stolen.  This is so stupid, I literally only locked it up for ten minutes.",
+    "It was outside the Späti on Hermannplatz, about an hour ago — like, six-thirty pm.",
+    "It's the Canyon I have on the policy — the Endurace.  I had a U-lock on it through the frame and back wheel, but they cut it.",
+    "I called 110, the officer came out, he gave me a case number — let me find it — VKB-2026-04-25-Berlin-7711.",
+    "I have the original receipt and photos of the bike from when I bought it.  And I think I know the serial too.",
+    "No one was hurt, no.  Just me, kicking myself."
+  ]
+}

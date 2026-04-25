@@ -83,7 +83,10 @@ async def run() -> None:
     crm = load_crm(args.crm)
     state = ClaimState(call_id=f"text-demo-{args.crm}")
     brain = make_brain()
-    extractor = GeminiExtractor(fallback=ExtractionService())
+    # Default to FNOL when running interactively without a scenario file.
+    from agent.domain import load_domain
+    domain = load_domain("insurance_fnol")
+    extractor = GeminiExtractor.for_domain(domain, fallback=ExtractionService())
 
     print(f"\n  CRM:        {args.crm}")
     print(f"  Gemini:     {'live' if brain._real else 'stub fallback'}")

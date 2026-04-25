@@ -38,7 +38,18 @@ except Exception:
     pass
 
 
-JUDGE_MODEL = os.environ.get("GEMINI_JUDGE_MODEL", "gemini-2.5-pro")
+# gemini-2.5-pro is the most rigorous judge but its free-tier quota is
+# tight (and the user's was already exhausted during the hackathon).
+# gemini-2.5-flash-lite is the survivor — independent quota bucket and
+# more than capable for the four scoring axes we care about.
+JUDGE_MODEL = os.environ.get("GEMINI_JUDGE_MODEL", "gemini-2.5-flash-lite")
+# Models we'll auto-fall-through to if the configured judge is throttled.
+JUDGE_FALLBACKS = [
+    "gemini-2.5-flash-lite",
+    "gemini-flash-latest",
+    "gemini-2.5-flash",
+    "gemini-2.5-pro",
+]
 
 
 JUDGE_PROMPT = """\
@@ -111,17 +122,30 @@ def score_one(transcript_path: Path) -> dict:
         return {"error": "GOOGLE_API_KEY not set — can't run the judge"}
 
     client = genai.Client(api_key=api_key)
-    try:
-        resp = client.models.generate_content(
-            model=JUDGE_MODEL,
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                temperature=0.1,
-                response_mime_type="application/json",
-            ),
-        )
-    except Exception as e:
-        return {"error": f"{type(e).__name__}: {str(e)[:200]}"}
+    # Walk the fallback list — quota exhaustion on one model is normal.
+    seen: set[str] = set()
+    rotation: list[str] = []
+    for m in [JUDGE_MODEL] + JUDGE_FALLBACKS:
+        if m and m not in seen:
+            rotation.append(m); seen.add(m)
+    last_err: Exception | None = None
+    resp = None
+    for model in rotation:
+        try:
+            resp = client.models.generate_content(
+                model=model,
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    temperature=0.1,
+                    response_mime_type="application/json",
+                ),
+            )
+            break
+        except Exception as e:
+            last_err = e
+            continue
+    if resp is None:
+        return {"error": f"all judge models exhausted; last: {type(last_err).__name__}: {last_err}"}
 
     raw = (getattr(resp, "text", "") or "").strip()
     try:

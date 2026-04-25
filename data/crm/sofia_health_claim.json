@@ -1,0 +1,40 @@
+{
+  "caller_id": "SOFIA_RICHTER_4419",
+  "domain": "health_insurance_claim",
+  "policyholder": {
+    "name": "Sofia Richter",
+    "dob": "1979-08-12",
+    "address": "Bergmannstraße 41, 10961 Berlin",
+    "phone": "+49 176 555 0298",
+    "email": "s.richter@kabelmail.de",
+    "preferred_language": "de",
+    "preferred_channel": "phone"
+  },
+  "policy": {
+    "policy_number": "DE-AZP-2018-771204",
+    "product": "Allianz Privat Komfort",
+    "tariff_generation": "PP-2018",
+    "underwriting_insurer": "Allianz Private Krankenversicherungs-AG",
+    "effective_date": "2018-07-01",
+    "renewal_date": "2026-07-01",
+    "premium_status": "paid",
+    "monthly_premium_eur": 412.30
+  },
+  "coverage": {
+    "outpatient": {"reimbursement_pct": 100, "deductible_year_eur": 300, "deductible_used_ytd_eur": 110},
+    "inpatient":  {"reimbursement_pct": 100, "single_room": true, "chief_physician": true},
+    "dental":     {"reimbursement_pct": 80,  "annual_cap_eur": 2500, "ytd_used_eur": 480},
+    "vision":     {"reimbursement_pct": 100, "two_year_cap_eur": 600, "last_used": "2024-09-12"},
+    "physio":     {"reimbursement_pct": 100, "session_cap_per_year": 24, "ytd_sessions": 6},
+    "rx_prescriptions": {"reimbursement_pct": 100}
+  },
+  "preferred_payout_iban_masked": "DE12 ****  ****  ****  ****  6677",
+  "claims_history_24mo": [
+    {"id": "C-2025-0341", "type": "outpatient_gp", "amount_eur": 184.20, "settled": true},
+    {"id": "C-2025-0617", "type": "physio",        "amount_eur": 540.00, "settled": true},
+    {"id": "C-2026-0082", "type": "rx",            "amount_eur":  73.40, "settled": true}
+  ],
+  "open_authorizations": [],
+  "fraud_flags": false,
+  "consent": {"electronic_invoicing": true, "marketing": false}
+}

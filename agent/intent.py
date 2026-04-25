@@ -109,19 +109,41 @@ _COMPILED: list[tuple[str, list[re.Pattern[str]]]] = [
 ]
 
 
-def classify_jamie_question(text: str) -> set[str]:
-    """Return the set of pillar IDs Jamie's reply asks about.
+def classify_jamie_question(
+    text: str,
+    domain: "Any | None" = None,
+) -> set[str]:
+    """Return the set of target IDs Jamie's reply asks about.
 
-    Empty set if no pattern matched.  Multiple pillars allowed (Jamie
-    sometimes asks two things at once — we want to flag all of them).
+    If a DomainConfig is passed and exposes `intent_patterns` (a dict of
+    {target_id: [regex, ...]}), we use those.  Otherwise we fall back to
+    the universal patterns above (FNOL-flavored — fine for the FNOL
+    domain, irrelevant but harmless for others).
+
+    Worst case (unrecognized domain, no patterns), the function returns
+    an empty set — anti-repetition just doesn't fire for that turn.
+    Pillars still get filled by the extractor; the dashboard still
+    updates.  Repetition becomes a soft-quality issue, not a crash.
     """
     if not text:
         return set()
+    patterns_to_use = _COMPILED
+    if domain is not None:
+        custom = getattr(domain, "intent_patterns", None)
+        if custom:
+            patterns_to_use = [
+                (pid, [re.compile(p, re.IGNORECASE) for p in pats])
+                for pid, pats in custom.items()
+            ]
     found: set[str] = set()
-    for pid, patterns in _COMPILED:
+    for pid, patterns in patterns_to_use:
         if any(p.search(text) for p in patterns):
             found.add(pid)
     return found
+
+
+# Bring in Any so the type hint above works even at runtime
+from typing import Any  # noqa: E402
 
 
 # --- self-test -------------------------------------------------------------

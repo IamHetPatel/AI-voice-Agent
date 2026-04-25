@@ -1,0 +1,38 @@
+{
+  "caller_id": "JONAS_KAUFMANN_2118",
+  "domain": "theft_claim",
+  "policyholder": {
+    "name": "Jonas Kaufmann",
+    "dob": "1996-04-22",
+    "address": "Sonnenallee 134, 12059 Berlin",
+    "phone": "+49 178 555 1042",
+    "email": "j.kaufmann@protonmail.com",
+    "preferred_language": "de",
+    "preferred_channel": "phone"
+  },
+  "policy": {
+    "policy_number": "DE-VOR-2023-668102",
+    "product": "Hausrat Premium + Fahrradklausel",
+    "tariff_generation": "Hausrat 2023",
+    "underwriting_insurer": "Vorsicht Versicherung AG",
+    "effective_date": "2023-03-01",
+    "renewal_date": "2027-03-01",
+    "premium_status": "paid",
+    "annual_premium_eur": 168.00
+  },
+  "coverage": {
+    "household_contents": {"sum_insured_eur": 35000, "deductible_eur": 150},
+    "bicycle_addon": {"sum_insured_eur": 4000, "deductible_eur": 0, "covers_e_bikes": true, "lock_required": true},
+    "outside_home_clause": {"yes": true, "max_per_item_eur": 1500, "europe_wide": true},
+    "valuables_subcap_eur": 2500,
+    "cash_subcap_eur": 1500
+  },
+  "registered_items": [
+    {"id": "BIKE-01", "category": "bicycle", "make_model": "Canyon Endurace CF 7", "serial": "CY24E70019883", "purchase_date": "2024-05-12", "purchase_price_eur": 2400},
+    {"id": "PHONE-01", "category": "phone",   "make_model": "iPhone 15 Pro", "serial": "F2LDH4XRAV8R",   "purchase_date": "2024-03-09", "purchase_price_eur": 1199}
+  ],
+  "claims_history_36mo": [],
+  "fraud_flags": false,
+  "his_hits": 0,
+  "consent": {"data_sharing_with_police": true, "marketing": false}
+}

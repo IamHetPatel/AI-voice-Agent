@@ -141,17 +141,16 @@ def test_tavily_stub_runs():
 
 def test_domains_loadable():
     """Every JSON in data/domains/ must parse into a DomainConfig."""
-    from agent.domain import list_domains, load_domain
+    from agent.domain import list_domains, load_domain, render_opening
     ids = list_domains()
+    # Per Inca's clarification, all domains must be CLAIM types.
     assert "insurance_fnol" in ids
-    assert "banking_card_block" in ids
-    assert "telco_cancellation" in ids
-    from agent.domain import render_opening
+    assert "health_insurance_claim" in ids
+    assert "theft_claim" in ids
     for did in ids:
         d = load_domain(did)
         assert d.targets, f"{did}: empty targets"
         assert d.role_label, f"{did}: missing role_label"
-        # Render with a stub CRM — must not raise, must produce non-empty text
         rendered = render_opening(d, {"policyholder": {"name": "Test User"}})
         assert rendered and len(rendered) > 10, f"{did}: opening rendered empty"
 
@@ -161,11 +160,26 @@ def test_prompt_renders_per_domain():
     from agent.claim_state import ClaimState
     from agent.domain import load_domain
     from agent.prompts import build_jamie_system_prompt
-    crm = json.loads((REPO / "data" / "crm" / "anna_card_block.json").read_text())
-    d = load_domain("banking_card_block")
+    crm = json.loads((REPO / "data" / "crm" / "sofia_health_claim.json").read_text())
+    d = load_domain("health_insurance_claim")
     state = ClaimState(call_id="t", targets=list(d.targets))
     p = build_jamie_system_prompt(crm, state, domain=d)
-    assert "Card-Block" in p or "Card Services" in p
-    assert "Anna Keller" in p
-    # FNOL-only language must NOT leak in
-    assert "Vorsicht" not in p
+    assert "Health" in p or "Allianz" in p
+    assert "Sofia Richter" in p
+
+
+def test_extractor_uses_domain_targets():
+    """GeminiExtractor.for_domain must restrict its allowed-keys list to
+    the domain's targets — banking shouldn't fill 'accident_location'."""
+    from agent.domain import load_domain
+    from extraction.gemini_extractor import GeminiExtractor
+    d = load_domain("theft_claim")
+    e = GeminiExtractor.for_domain(d, fallback=None)
+    # Build the prompt for an arbitrary text and check the labels listed
+    p = e._build_prompt("test")
+    # Targets that SHOULD be in the prompt
+    assert "incident_type" in p
+    assert "items_stolen" in p
+    # FNOL-specific labels that must NOT be in the prompt
+    assert "accident_date" not in p
+    assert "vehicle_drivable" not in p

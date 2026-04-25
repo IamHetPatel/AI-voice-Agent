@@ -128,11 +128,9 @@ async def run_scenario(scenario_path: Path, pace: str, no_bridge: bool) -> Path:
     # Pluggable brain — picks gemini/ollama/openai per BRAIN_PROVIDER env.
     # Falls back through providers if the configured one isn't reachable.
     brain = make_brain()
-    # Gemini-Lite extractor by default with GLiNER as fallback — fixes
-    # the 0/15 problem we saw on bi-large (low-similarity threshold +
-    # snake_case labels were poor) without giving up the speed/cost
-    # comparison narrative that GLiNER provides.
-    extractor = GeminiExtractor(fallback=ExtractionService())
+    # Domain-aware extractor: prompt + allowed-keys are built from the
+    # domain's targets so banking won't fill 'accident_location' etc.
+    extractor = GeminiExtractor.for_domain(domain, fallback=ExtractionService())
 
     banner(f"AUTO DEMO  •  scenario: {scenario['name']}")
     print(f"  Domain:    {domain.id}  ({domain.name})")
@@ -244,7 +242,9 @@ async def run_scenario(scenario_path: Path, pace: str, no_bridge: bool) -> Path:
 
         # Track which pillars Jamie just asked about so the next prompt
         # excludes them from "ASK NEXT" — the real repetition fix.
-        asked_now = classify_jamie_question(reply)
+        # Pass `domain` so the patterns match the right target IDs
+        # (FNOL patterns wouldn't match health-claim or theft intents).
+        asked_now = classify_jamie_question(reply, domain=domain)
         if asked_now:
             state.mark_asked(asked_now)
             print(f"  {Term.DIM}[asked: {', '.join(sorted(asked_now))}]{Term.END}")
