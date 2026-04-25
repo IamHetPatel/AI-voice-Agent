@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Vorsicht Claims · Live FNOL Console</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+  :root {
+    --bg: #0b1220;
+    --panel: #111a2e;
+    --panel-2: #0d1525;
+    --border: #1f2a44;
+    --ink: #d6dee9;
+    --muted: #7a8aa6;
+    --accent: #5fb4ff;
+    --good: #4ade80;
+    --warn: #fbbf24;
+    --bad:  #f87171;
+    --kalm: #4ade80;
+    --noisy:#fbbf24;
+    --dist: #f87171;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin:0; padding:0; background: var(--bg); color: var(--ink);
+    font-family: 'Inter', -apple-system, system-ui, sans-serif; }
+  .app { display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 14px;
+    grid-template-rows: auto 1fr; padding: 14px; height: 100vh; }
+  header { grid-column: 1 / 4; display:flex; align-items:center; justify-content:space-between;
+    padding: 12px 18px; background: linear-gradient(90deg, #122044, #0d1525);
+    border:1px solid var(--border); border-radius: 12px; }
+  header .brand { font-weight: 700; letter-spacing: .5px; }
+  header .brand span { color: var(--accent); }
+  header .status { display:flex; gap:14px; align-items:center; font-size: 13px; }
+  .pill { padding: 4px 10px; border-radius: 99px; background:#1c2a4a;
+    border:1px solid var(--border); font-size:12px; }
+  .pill.live { background:#0e2c1d; color:#a7f3d0; border-color:#14532d; }
+  .pill.dead { background:#2a0e0e; color:#fecaca; border-color:#7f1d1d; }
+  .panel { background: var(--panel); border:1px solid var(--border); border-radius: 12px;
+    display:flex; flex-direction:column; min-height:0; }
+  .panel h3 { margin:0; padding: 12px 14px; font-size: 13px; letter-spacing: .8px;
+    text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--border); }
+  .panel .body { padding: 12px 14px; overflow:auto; flex:1; }
+  .col { display:flex; flex-direction:column; gap:14px; min-height:0; }
+  .turn { margin: 6px 0; padding: 8px 10px; border-radius: 10px; max-width: 92%; }
+  .turn.caller { background:#1a2540; border:1px solid #243557; }
+  .turn.jamie  { background:#0e2730; border:1px solid #14424f; margin-left: auto; }
+  .turn .who { font-size: 11px; color: var(--muted); margin-bottom: 2px; text-transform: uppercase; letter-spacing: .8px; }
+  .pillar { display:flex; align-items:center; justify-content:space-between;
+    padding: 6px 8px; border-radius: 8px; margin: 3px 0; background: var(--panel-2);
+    border: 1px solid var(--border); font-size: 13px; }
+  .pillar.filled { border-color:#14532d; background:#0e2c1d; }
+  .pillar .label { color: var(--ink); font-weight: 500; }
+  .pillar .value { color: var(--muted); font-size:12px; max-width: 55%;
+    overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .check { width:16px; height:16px; border-radius:50%; background:#1f2a44; display:inline-block; margin-right:8px; }
+  .check.on { background: var(--good); }
+  .gauge { display:flex; align-items:flex-end; gap:2px; height: 34px; margin-top: 8px; }
+  .gauge .bar { width: 8px; background: #1c2a4a; border-radius: 2px; }
+  .gauge .bar.on { background: var(--accent); }
+  .gauge .bar.warn { background: var(--warn); }
+  .gauge .bar.bad { background: var(--bad); }
+  .mode { font-size: 28px; font-weight: 700; }
+  .mode.calm { color: var(--kalm); }
+  .mode.noisy { color: var(--noisy); }
+  .mode.distressed { color: var(--dist); }
+  pre { white-space: pre-wrap; font-size: 12px; color: #b6c2d4;
+    background: var(--panel-2); padding: 10px; border-radius: 8px;
+    border: 1px solid var(--border); margin: 0; }
+  .small { color: var(--muted); font-size: 12px; }
+  button { background: #1c2a4a; color: var(--ink); border:1px solid var(--border);
+    border-radius: 8px; padding: 6px 10px; cursor:pointer; font-size: 12px; }
+  button:hover { background: #243557; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useEffect, useMemo, useReducer, useRef, useState } = React;
+
+const PILLARS = [
+  ["injuries", "Injuries"],
+  ["accident_datetime", "Date / time"],
+  ["accident_location", "Location"],
+  ["road_type", "Road type"],
+  ["weather_conditions", "Weather"],
+  ["how_it_happened", "How it happened"],
+  ["vehicle_drivable", "Drivable?"],
+  ["other_party_involved", "Other party?"],
+  ["other_party_plate", "Other party plate"],
+  ["other_party_insurer", "Other party insurer"],
+  ["police_involved", "Police?"],
+  ["police_case_number", "Police case #"],
+  ["witnesses", "Witnesses"],
+  ["fault_admission", "Fault admission"],
+  ["settlement_preference", "Settlement pref."],
+];
+
+// GLiNER labels map onto pillar IDs slightly differently — keep both names.
+const LABEL_ALIAS = {
+  accident_date: "accident_datetime",
+  accident_time: "accident_datetime",
+  injury_description: "injuries",
+  damage_description: "how_it_happened",
+  witness_name: "witnesses",
+};
+
+function reducer(state, ev) {
+  switch (ev.type) {
+    case "transcript":
+      return { ...state, transcript: [...state.transcript, ev] };
+    case "entity": {
+      const lab = LABEL_ALIAS[ev.label] || ev.label;
+      return { ...state, pillars: { ...state.pillars, [lab]: ev } };
+    }
+    case "fraud_signal":
+      return { ...state, fraud: { ...state.fraud, [ev.signal]: ev } };
+    case "emotional_state":
+      return { ...state, mode: ev.state };
+    case "tool_call":
+    case "tool_result":
+      return { ...state, tools: [ev, ...state.tools].slice(0, 8) };
+    case "call_start":
+      return { ...state, crm: ev.crm || {}, transcript: [], pillars: {}, fraud: {}, tools: [],
+        mode: "calm", finalClaim: null };
+    case "call_end":
+      return { ...state, finalClaim: ev.claim_json };
+    default:
+      return state;
+  }
+}
+
+const INITIAL = { transcript: [], pillars: {}, fraud: {}, tools: [],
+  mode: "calm", crm: null, finalClaim: null };
+
+function App() {
+  const [state, dispatch] = useReducer(reducer, INITIAL);
+  const [connected, setConnected] = useState(false);
+  const wsRef = useRef(null);
+  const transcriptEnd = useRef(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    function connect() {
+      const url = (window.location.protocol === "https:" ? "wss://" : "ws://") +
+        (window.location.hostname || "127.0.0.1") + ":8765/ws";
+      const ws = new WebSocket(url);
+      wsRef.current = ws;
+      ws.onopen = () => !cancelled && setConnected(true);
+      ws.onclose = () => {
+        if (cancelled) return;
+        setConnected(false);
+        setTimeout(connect, 1500);
+      };
+      ws.onerror = () => ws.close();
+      ws.onmessage = (m) => {
+        try { dispatch(JSON.parse(m.data)); } catch (_) {}
+      };
+    }
+    connect();
+    return () => { cancelled = true; wsRef.current?.close(); };
+  }, []);
+
+  useEffect(() => {
+    transcriptEnd.current?.scrollIntoView({ behavior: "smooth" });
+  }, [state.transcript]);
+
+  const fraudScore = useMemo(() => {
+    const w = { low: 1, medium: 2, high: 4 };
+    return Math.min(10, Object.values(state.fraud).reduce((a, s) => a + (w[s.severity] || 1), 0));
+  }, [state.fraud]);
+
+  const filledCount = Object.keys(state.pillars).length;
+
+  return (
+    <div className="app">
+      <header>
+        <div className="brand">VORSICHT <span>Claims</span> · Live FNOL Console</div>
+        <div className="status">
+          <span className={"pill " + (connected ? "live" : "dead")}>
+            {connected ? "● bridge connected" : "● bridge offline"}
+          </span>
+          <span className="pill">pillars {filledCount} / {PILLARS.length}</span>
+          <span className="pill">fraud risk {fraudScore} / 10</span>
+        </div>
+      </header>
+
+      {/* col 1 — transcript */}
+      <div className="col">
+        <div className="panel" style={{flex:1}}>
+          <h3>Live transcript</h3>
+          <div className="body">
+            {state.transcript.length === 0 && <div className="small">Waiting for the call to start…</div>}
+            {state.transcript.map((t, i) => (
+              <div key={i} className={"turn " + (t.speaker === "jamie" ? "jamie" : "caller")}>
+                <div className="who">{t.speaker === "jamie" ? "Jamie" : "Caller"}</div>
+                <div>{t.text}</div>
+              </div>
+            ))}
+            <div ref={transcriptEnd} />
+          </div>
+        </div>
+        <div className="panel" style={{maxHeight: 220}}>
+          <h3>Tool calls</h3>
+          <div className="body">
+            {state.tools.length === 0 && <div className="small">No tool calls yet.</div>}
+            {state.tools.map((t, i) => (
+              <div key={i} style={{marginBottom:6, fontSize:13}}>
+                <strong>{t.type === "tool_call" ? "→" : "←"} {t.name}</strong>
+                <pre style={{marginTop:4}}>{JSON.stringify(t.args || t.result, null, 2)}</pre>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* col 2 — pillars + fraud + mode */}
+      <div className="col">
+        <div className="panel" style={{flex:1}}>
+          <h3>Claim pillars · {filledCount}/{PILLARS.length}</h3>
+          <div className="body">
+            {PILLARS.map(([id, label]) => {
+              const filled = state.pillars[id];
+              return (
+                <div key={id} className={"pillar " + (filled ? "filled" : "")}>
+                  <span className="label">
+                    <span className={"check " + (filled ? "on" : "")}></span>
+                    {label}
+                  </span>
+                  <span className="value">{filled ? (filled.value || filled.text) : "—"}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+        <div className="panel" style={{maxHeight: 240}}>
+          <h3>Fraud signals · risk {fraudScore} / 10</h3>
+          <div className="body">
+            <div className="gauge">
+              {Array.from({length: 10}).map((_, i) => {
+                const cls = i < fraudScore ? (fraudScore >= 7 ? "bar bad" : fraudScore >= 4 ? "bar warn" : "bar on") : "bar";
+                return <div key={i} className={cls} style={{height: 8 + i*3 + "px"}} />;
+              })}
+            </div>
+            <div style={{marginTop:10}}>
+              {Object.values(state.fraud).length === 0 && <div className="small">No signals flagged.</div>}
+              {Object.values(state.fraud).map((s, i) => (
+                <div key={i} className="pillar" style={{borderColor:'#7f1d1d'}}>
+                  <span className="label">{s.signal}</span>
+                  <span className="value">{s.severity} · {s.evidence}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* col 3 — CRM, mode, final JSON */}
+      <div className="col">
+        <div className="panel" style={{maxHeight: 260}}>
+          <h3>Emotional mode</h3>
+          <div className="body">
+            <div className={"mode " + state.mode}>{state.mode.toUpperCase()}</div>
+            <div className="small" style={{marginTop:6}}>
+              {state.mode === "calm" && "Standard interview pace, normal questioning."}
+              {state.mode === "distressed" && "Slow down. Safety first. Skip data, validate emotion."}
+              {state.mode === "noisy" && "Short sentences. Confirm key data twice."}
+            </div>
+          </div>
+        </div>
+        <div className="panel" style={{flex:1}}>
+          <h3>Known context (CRM)</h3>
+          <div className="body">
+            {state.crm ? <pre>{JSON.stringify(state.crm, null, 2)}</pre> :
+              <div className="small">CRM profile loads when the call starts.</div>}
+          </div>
+        </div>
+        <div className="panel" style={{maxHeight: 260}}>
+          <h3>Final claim JSON
+            {state.finalClaim && (
+              <button style={{float:'right'}} onClick={() =>
+                navigator.clipboard.writeText(JSON.stringify(state.finalClaim, null, 2))
+              }>copy</button>
+            )}
+          </h3>
+          <div className="body">
+            {state.finalClaim
+              ? <pre>{JSON.stringify(state.finalClaim, null, 2)}</pre>
+              : <div className="small">Available at call end.</div>}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>
