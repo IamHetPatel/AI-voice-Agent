@@ -1,0 +1,28 @@
+# Aikido CI gate placeholder.
+#
+# Replace this file with the YAML Aikido emits from `app.aikido.dev` once the
+# repo is connected.  The intent is: any PR that introduces a CRITICAL
+# vulnerability (CVSS >= 9.0) is blocked; HIGH severity warns; MEDIUM logs.
+#
+# Action ref:  aikidosec/firewall-action@v1
+# Docs:        https://help.aikido.dev/doc/cicd-overview
+
+policy:
+  block_on_severity: critical
+  warn_on_severity: high
+  ignore_dev_dependencies: false
+
+scans:
+  - sca           # Software Composition Analysis (deps)
+  - secrets       # Hard-coded credentials
+  - sast          # Static analysis
+  - iac           # Infra-as-Code lint
+  - container     # If we ship a Dockerfile
+  - license       # OSS license compatibility
+
+ignore:
+  # Add CVE IDs here ONLY with a reason and an expiry date.
+  # - cve: CVE-2024-XXXX
+  #   reason: "Not exploitable in our config (no SSR)."
+  #   expires: 2026-06-01
+  []
