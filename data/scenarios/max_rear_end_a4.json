@@ -1,5 +1,6 @@
 {
   "name": "max_rear_end_a4",
+  "domain": "insurance_fnol",
   "crm_profile": "max_mueller",
   "description": "Vollkasko driver rear-ended on the A4 near Köln-Ost in heavy rain. No injuries, other party admitted fault, police came. Showcases Tavily weather lookup + clean pillar progression.",
   "expected_pillars": [

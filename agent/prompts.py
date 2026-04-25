@@ -135,6 +135,7 @@ def build_jamie_system_prompt(
     state: ClaimState,
     last_jamie_reply: str | None = None,
     tool_results: list[dict[str, Any]] | None = None,
+    domain: "Any | None" = None,  # agent.domain.DomainConfig — kept loose to avoid circular import
 ) -> str:
     """Compose the live system prompt — call on EVERY turn.
 
@@ -152,6 +153,23 @@ def build_jamie_system_prompt(
     needed = state.unfilled_summary_compact()
     phase = _phase(state)
     last = (last_jamie_reply or "").strip()
+
+    # Domain section: defaults to FNOL framing if no DomainConfig is given,
+    # so legacy callers continue to work unchanged.
+    if domain is not None:
+        domain_block = (
+            f"\n# DOMAIN: {domain.name}\n"
+            f"Role: {domain.role_label}\n"
+            f"Brief: {domain.role_description}\n"
+            f"Tone notes: {domain.tone_notes}\n"
+            f"Escalate (don't try to handle yourself): {'; '.join(domain.escalations) or '(none)'}\n"
+        )
+    else:
+        domain_block = (
+            "\n# DOMAIN: Vorsicht Versicherung — First Notice of Loss\n"
+            "Role: Claims Intake Specialist (default — pass a DomainConfig "
+            "to override).\n"
+        )
     last_block = (
         f'\n# WHAT YOU JUST SAID (do NOT ask the same thing again, do NOT echo this verbatim):\n'
         f'  "{last[:280]}{"…" if len(last) > 280 else ""}"\n'
@@ -174,10 +192,11 @@ def build_jamie_system_prompt(
 
     return (
         f"{_PERSONA_AND_RULES}\n"
-        f"\n# YOUR CRM (read-only, quote verbatim only)\n"
+        f"{domain_block}"
+        f"\n# CONTEXT (read-only, quote verbatim only — your screen for this caller)\n"
         f"```json\n{crm_block}\n```\n"
         f"\n# ALREADY HEARD (do NOT re-ask)\n{filled}\n"
-        f"\n# STILL NEEDED (gather naturally; never read as a list)\n"
+        f"\n# OPEN TARGETS (capture only if the caller's last sentence opens a natural door)\n"
         f"{needed}\n"
         f"{last_block}"
         f"{tool_block}"
@@ -189,14 +208,25 @@ def build_jamie_system_prompt(
 
 # ---- helpers -------------------------------------------------------------
 
-def opening_line(crm: dict[str, Any]) -> str:
-    """The very first thing Jamie says when the call connects.  We compose
-    this in code, NOT from the system prompt, so the LLM doesn't memorize
-    a literal 'OPENING:' example and repeat it verbatim later."""
-    name = crm.get("policyholder", {}).get("name") or crm.get(
-        "policyholder", {}
-    ).get("contact_person", "there")
-    short = name.split()[0]
+def opening_line(crm: dict[str, Any], domain: "Any | None" = None) -> str:
+    """The very first thing Jamie says when the call connects.
+
+    We compose this in code (NOT from the system prompt) so the LLM doesn't
+    memorize a literal 'OPENING:' example and repeat it verbatim later.
+
+    If a DomainConfig is supplied, use its template (with {first_name}
+    substituted from the CRM); otherwise fall back to the FNOL default.
+    """
+    if domain is not None:
+        from .domain import render_opening
+        return render_opening(domain, crm)
+
+    name = (
+        crm.get("policyholder", {}).get("name")
+        or crm.get("policyholder", {}).get("contact_person")
+        or crm.get("customer", {}).get("name", "there")
+    )
+    short = name.split()[0] if isinstance(name, str) else "there"
     return (
         f"Guten Tag {short}, you're through to Jamie at Vorsicht claims — "
         f"I have your file open.  First things first: are you okay?  "

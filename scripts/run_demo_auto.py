@@ -49,9 +49,10 @@ except Exception:
 
 from agent.claim_state import ClaimState
 from agent.prompts import build_jamie_system_prompt, opening_line
-from agent.gemini_client import GeminiBrain
+from agent.brain import make_brain
 from agent.intent import classify_jamie_question
 from agent.pii_redact import redact
+from agent.domain import load_domain
 from extraction.gliner2_service import ExtractionService
 from extraction.gemini_extractor import GeminiExtractor
 from bridge.client import publish as bridge_publish
@@ -115,16 +116,28 @@ async def run_scenario(scenario_path: Path, pace: str, no_bridge: bool) -> Path:
     crm_name = scenario["crm_profile"]
     crm = json.loads((REPO / "data" / "crm" / f"{crm_name}.json").read_text())
 
-    state = ClaimState(call_id=f"auto-{scenario['name']}-{int(time.time())}")
-    brain = GeminiBrain()
+    # Load the domain config (defaults to insurance_fnol if not specified
+    # so legacy scenarios still run unchanged).
+    domain_id = scenario.get("domain", "insurance_fnol")
+    domain = load_domain(domain_id)
+
+    state = ClaimState(
+        call_id=f"auto-{scenario['name']}-{int(time.time())}",
+        targets=list(domain.targets),
+    )
+    # Pluggable brain — picks gemini/ollama/openai per BRAIN_PROVIDER env.
+    # Falls back through providers if the configured one isn't reachable.
+    brain = make_brain()
     # Gemini-Lite extractor by default with GLiNER as fallback — fixes
     # the 0/15 problem we saw on bi-large (low-similarity threshold +
     # snake_case labels were poor) without giving up the speed/cost
     # comparison narrative that GLiNER provides.
     extractor = GeminiExtractor(fallback=ExtractionService())
 
-    banner(f"AUTO DEMO  •  scenario: {scenario['name']}  •  CRM: {crm_name}")
-    print(f"  Gemini:    {'live ' + brain.model_name if brain._real else 'stub fallback'}")
+    banner(f"AUTO DEMO  •  scenario: {scenario['name']}")
+    print(f"  Domain:    {domain.id}  ({domain.name})")
+    print(f"  CRM:       {crm_name}")
+    print(f"  Brain:     {'live ' + brain.model_name if brain._real else 'stub fallback'}")
     print(f"  Extractor: {extractor.mode}")
     print(f"  Bridge:    {'OFF' if no_bridge else 'http://localhost:8765'}")
     print(f"  Pace:      {pace}")
@@ -152,8 +165,8 @@ async def run_scenario(scenario_path: Path, pace: str, no_bridge: bool) -> Path:
 
     await emit({"type": "call_start", "crm": crm})
 
-    # Jamie opens
-    opener = opening_line(crm)
+    # Jamie opens — uses the domain's opening_template
+    opener = opening_line(crm, domain=domain)
     await speak("jamie", opener)
     history.append({"role": "model", "text": opener})
 
@@ -211,6 +224,7 @@ async def run_scenario(scenario_path: Path, pace: str, no_bridge: bool) -> Path:
             crm, state,
             last_jamie_reply=last_jamie,
             tool_results=tool_results,
+            domain=domain,
         )
         chunks: list[str] = []
         try:
@@ -251,6 +265,7 @@ async def run_scenario(scenario_path: Path, pace: str, no_bridge: bool) -> Path:
     out_path = TRANSCRIPT_DIR / f"{scenario['name']}_{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S')}.json"
     out_path.write_text(json.dumps({
         "scenario": scenario,
+        "domain": domain.id,
         "crm_profile": crm_name,
         "transcript": transcript,
         "claim_state": state.to_dict(),

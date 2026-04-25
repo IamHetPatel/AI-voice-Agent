@@ -34,7 +34,7 @@ except Exception:
     pass
 
 from agent.claim_state import ClaimState
-from agent.gemini_client import GeminiBrain
+from agent.brain import make_brain
 from agent.prompts import build_jamie_system_prompt, opening_line
 from agent.intent import classify_jamie_question
 from agent.pii_redact import redact
@@ -82,7 +82,7 @@ async def run() -> None:
 
     crm = load_crm(args.crm)
     state = ClaimState(call_id=f"text-demo-{args.crm}")
-    brain = GeminiBrain()
+    brain = make_brain()
     extractor = GeminiExtractor(fallback=ExtractionService())
 
     print(f"\n  CRM:        {args.crm}")

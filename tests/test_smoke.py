@@ -137,3 +137,35 @@ def test_tavily_stub_runs():
     from tools.tavily_lookup import lookup_weather
     r = lookup_weather("A4 Köln")
     assert "summary" in r
+
+
+def test_domains_loadable():
+    """Every JSON in data/domains/ must parse into a DomainConfig."""
+    from agent.domain import list_domains, load_domain
+    ids = list_domains()
+    assert "insurance_fnol" in ids
+    assert "banking_card_block" in ids
+    assert "telco_cancellation" in ids
+    from agent.domain import render_opening
+    for did in ids:
+        d = load_domain(did)
+        assert d.targets, f"{did}: empty targets"
+        assert d.role_label, f"{did}: missing role_label"
+        # Render with a stub CRM — must not raise, must produce non-empty text
+        rendered = render_opening(d, {"policyholder": {"name": "Test User"}})
+        assert rendered and len(rendered) > 10, f"{did}: opening rendered empty"
+
+
+def test_prompt_renders_per_domain():
+    """The prompt must reflect the domain in its persona block."""
+    from agent.claim_state import ClaimState
+    from agent.domain import load_domain
+    from agent.prompts import build_jamie_system_prompt
+    crm = json.loads((REPO / "data" / "crm" / "anna_card_block.json").read_text())
+    d = load_domain("banking_card_block")
+    state = ClaimState(call_id="t", targets=list(d.targets))
+    p = build_jamie_system_prompt(crm, state, domain=d)
+    assert "Card-Block" in p or "Card Services" in p
+    assert "Anna Keller" in p
+    # FNOL-only language must NOT leak in
+    assert "Vorsicht" not in p

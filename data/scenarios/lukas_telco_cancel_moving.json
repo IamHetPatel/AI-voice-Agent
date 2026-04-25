@@ -1,0 +1,18 @@
+{
+  "name": "lukas_telco_cancel_moving",
+  "domain": "telco_cancellation",
+  "crm_profile": "lukas_telco_cancel",
+  "description": "DSL customer wants to cancel because he's moving to Vienna.  Sincere reason; not switching to a competitor.  Tests honest retention behaviour (don't pitch when reason is geographic), correct device-return flow, and porting decision capture.",
+  "expected_pillars": [
+    "cancellation_reason", "moving_address", "preferred_end_date",
+    "device_status", "number_portability", "willingness_to_negotiate"
+  ],
+  "caller_turns": [
+    "Hi — I need to cancel my DSL contract, I'm moving abroad.",
+    "Vienna, Austria.  My new place there has fibre included so I won't need DSL at all.",
+    "Yeah, ideally end of May.  My move is the 31st.",
+    "I have your speedport router thing — what do I do with that?",
+    "Honestly, no, I don't need any retention offer.  I just need this clean.",
+    "Oh — and my mobile number, I'd like to keep that one and port it to an Austrian provider after I move.  Is that something you handle here?"
+  ]
+}

@@ -12,13 +12,10 @@ from datetime import datetime, timezone
 from typing import Any
 
 
-# Order = priority order Jamie should gather these.  Pillar 1 ("policy &
-# vehicle ID") is intentionally absent — it lives in the CRM, Jamie must
-# never ask for it.
-#
-# Each entry is (id, short_descriptor).  We deliberately do NOT include a
-# pre-written sample question — putting one in the system prompt biases
-# the LLM to use that exact phrasing every turn (we observed this).
+# Default targets for the insurance_fnol domain.  Used when no DomainConfig
+# is supplied — keeps single-domain tests + the original quickstart working.
+# For multi-domain, pass `targets=` (and optionally fraud_labels) into
+# ClaimState; load via agent.domain.load_domain(...) to get them.
 PILLARS: list[tuple[str, str]] = [
     ("injuries",              "anyone hurt — caller, passengers, third party"),
     ("accident_datetime",     "when (date + time)"),
@@ -48,7 +45,12 @@ FRAUD_LABELS: list[str] = [
 
 @dataclass
 class ClaimState:
-    """Mutable per-call state.  One instance per call."""
+    """Mutable per-call state.  One instance per call.
+
+    `targets` defaults to the insurance-FNOL pillar list.  Pass a domain-
+    specific list (from agent.domain.DomainConfig.targets) to use this
+    state in any other domain — banking, telco, healthcare, etc.
+    """
 
     call_id: str
     started_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
@@ -56,11 +58,12 @@ class ClaimState:
     fraud_signals: dict[str, Any] = field(default_factory=dict)
     emotional_mode: str = "calm"  # calm | distressed | noisy
     notes: list[str] = field(default_factory=list)
-    # Pillars Jamie has *asked about* in any prior turn — regardless of
-    # whether the caller answered.  This is the load-bearing field that
-    # stops the prompt from listing the same pillar in STILL NEEDED
-    # turn after turn (the original repetition bug).
+    # Targets Jamie has *asked about* in any prior turn — regardless of
+    # whether the caller answered.  Load-bearing field for anti-repetition.
     asked_pillars: set[str] = field(default_factory=set)
+    # Domain-driven target list.  Defaults to insurance-FNOL pillars so
+    # legacy tests / the single-domain quickstart still work unchanged.
+    targets: list[tuple[str, str]] = field(default_factory=lambda: list(PILLARS))
 
     # ----- pillar updates -----
     def fill(self, label: str, value: str, confidence: float = 1.0) -> None:
@@ -95,7 +98,9 @@ class ClaimState:
         return "\n".join(lines)
 
     def unfilled_pillars(self) -> list[tuple[str, str]]:
-        return [(k, q) for (k, q) in PILLARS if k not in self.pillars]
+        # Use this state's domain-driven `targets`, NOT the module-level
+        # PILLARS — that's the multi-domain hook.
+        return [(k, q) for (k, q) in self.targets if k not in self.pillars]
 
     def unfilled_summary(self) -> str:
         """Legacy — keep for backwards compat.  Prefer unfilled_summary_compact."""
@@ -116,8 +121,9 @@ class ClaimState:
                      opportunistically only.
         """
         unfilled = self.unfilled_pillars()
+        n_total = len(self.targets)
         if not unfilled:
-            return "(all targets captured — wrap up warmly with a reference number)"
+            return f"(all {n_total} targets captured — wrap up warmly with a reference number)"
         new = [(l, d) for (l, d) in unfilled if l not in self.asked_pillars]
         pending = [(l, d) for (l, d) in unfilled if l in self.asked_pillars]
 

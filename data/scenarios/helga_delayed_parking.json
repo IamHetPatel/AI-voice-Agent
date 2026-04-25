@@ -1,5 +1,6 @@
 {
   "name": "helga_delayed_parking",
+  "domain": "insurance_fnol",
   "crm_profile": "helga_schmidt",
   "description": "Vulnerable elderly customer reporting parking damage three weeks after the fact. Tests the fraud-signal pillar (delayed_reporting) and the 'vulnerable_flag' empathy mode. No third party.",
   "expected_pillars": [

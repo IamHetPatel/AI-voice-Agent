@@ -1,0 +1,17 @@
+{
+  "name": "anna_card_block_stolen",
+  "domain": "banking_card_block",
+  "crm_profile": "anna_card_block",
+  "description": "Customer reports her Visa Debit card stolen at Mediamarkt Alexanderplatz; two unrecognized transactions already on the account.  Tests known-context (we already see the flagged charges), urgency handling, and proper escalation framing.",
+  "expected_pillars": [
+    "card_status", "last_known_use", "fraudulent_charges",
+    "incident_location", "police_report", "replacement_address"
+  ],
+  "caller_turns": [
+    "Hi, I think my Visa Debit card was stolen.  I went to Mediamarkt at Alexanderplatz this evening and now my wallet's gone.",
+    "I last used it there at the till — about half an hour ago.  Something around 40 euros for a charger cable.",
+    "Wait — there are two charges I don't recognize, both Mediamarkt, like 189 and 450 euros.  Those aren't mine.",
+    "No, I haven't called the police yet.  Should I?  I'm a bit shaken.",
+    "Yes, please send the new card to the address on file.  And — uh — should I block the girocard too just in case?"
+  ]
+}
