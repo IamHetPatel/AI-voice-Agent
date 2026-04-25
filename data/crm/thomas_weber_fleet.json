@@ -1,0 +1,114 @@
+{
+  "caller_id": "THOMAS_WEBER_FLEET_004",
+  "policyholder": {
+    "name": "Logistikpartner Weber GmbH",
+    "contact_person": "Thomas Weber (Geschäftsführer)",
+    "dob": "1981-11-30",
+    "address": "Industriestraße 17, 70565 Stuttgart",
+    "phone": "+49 711 555 0440",
+    "email": "tweber@weber-logistik.de",
+    "preferred_language": "de",
+    "preferred_channel": "email",
+    "vulnerable_flag": false,
+    "power_of_attorney": null
+  },
+  "policy": {
+    "policy_number": "DE-ALL-2022-558102",
+    "product": "Flottenpolice Komfort",
+    "tariff_generation": "AKB 2022.1 — Flottentarif",
+    "underwriting_insurer": "Allianz Versicherungs-AG",
+    "broker_id": "BRK-STU-0091",
+    "effective_date": "2022-01-01",
+    "renewal_date": "2026-12-31",
+    "cancellation_status": "active",
+    "premium_status": "paid",
+    "arrears_eur": 0
+  },
+  "vehicle": {
+    "plate": "S-LW 4477",
+    "vin": "WDB9066351N123456",
+    "make": "Mercedes-Benz",
+    "model": "Sprinter 316 CDI",
+    "first_registration": "2022-08-15",
+    "engine_kw": 120,
+    "fuel": "diesel",
+    "vehicle_value_inception_eur": 48000,
+    "current_sum_insured_eur": 39000,
+    "use_type": "commercial",
+    "use_subtype": "delivery_van_under_3.5t",
+    "annual_mileage_band": "30000-50000",
+    "garage_address": "Industriestraße 17, 70565 Stuttgart",
+    "modifications": [
+      "Dachträger (declared)",
+      "Innenausbau Regalsystem (declared)"
+    ]
+  },
+  "coverage": {
+    "liability_sum_eur": 100000000,
+    "kasko_type": "Vollkasko",
+    "deductible_kasko_eur": 1000,
+    "deductible_teilkasko_eur": 500,
+    "deductible_liability_eur": 0,
+    "addons": ["Schutzbrief", "Mallorca-Police", "Auslandsschadenschutz", "GAP"],
+    "sf_class_liability": "SF8",
+    "sf_class_kasko": "SF8",
+    "rabattschutz": false,
+    "werkstattbindung": true,
+    "werkstatt_network": "Allianz Schadenservice Plus",
+    "auslandsschadenschutz": true,
+    "gap_coverage": true
+  },
+  "driver_scope": {
+    "type": "open",
+    "named_drivers": [],
+    "open_clause": true,
+    "age_restriction_min": 25,
+    "youngest_driver_dob": null,
+    "license_since": null,
+    "occasional_drivers_surcharge": true
+  },
+  "geographic_temporal": {
+    "country_coverage": "EU + Green Card + CH + UK",
+    "saisonkennzeichen": null,
+    "short_term_policy": false
+  },
+  "exclusions": {
+    "race_track_excluded": true,
+    "gross_negligence_clause": "partially_waived",
+    "telematics_active": true,
+    "individual_endorsements": ["Ladegutversicherung exkludiert"]
+  },
+  "obligations": {
+    "reporting_deadline_days": 3,
+    "police_required_for": ["theft", "wildlife", "hit_and_run", "third_party_injury"],
+    "repair_authorization_required": true
+  },
+  "claims_history": {
+    "total_claims": 4,
+    "last_claim_date": "2025-08-19",
+    "last_claim_type": "rear_end_collision",
+    "last_claim_amount_eur": 6420,
+    "open_claims": [],
+    "fraud_flags": false,
+    "his_hits": 0,
+    "prior_denials": []
+  },
+  "pre_existing_damage": [],
+  "vehicle_data": {
+    "current_mileage_km": 142800,
+    "last_hu_au_date": "2024-08-20",
+    "telematics_last_trip_iso": "2026-04-25T11:18:00+02:00",
+    "connected_car_partner": "Mercedes me connect Pro"
+  },
+  "communication_history": {
+    "last_contact": "2026-03-22",
+    "last_channel": "email",
+    "open_tasks": ["fleet renewal review pending"],
+    "last_nps_score": 8
+  },
+  "consent": {
+    "marketing": true,
+    "telematics": true,
+    "data_sharing_partners": true
+  }
+}

@@ -1,0 +1,119 @@
+{
+  "caller_id": "HELGA_SCHMIDT_017",
+  "policyholder": {
+    "name": "Helga Schmidt",
+    "dob": "1954-07-22",
+    "address": "Lindenweg 8, 80331 München",
+    "phone": "+49 89 555 0712",
+    "email": "h.schmidt@web.de",
+    "preferred_language": "de",
+    "preferred_channel": "phone",
+    "vulnerable_flag": true,
+    "vulnerable_reason": "age 71, hard of hearing — agent should speak slowly and confirm details twice",
+    "power_of_attorney": {
+      "name": "Markus Schmidt (son)",
+      "phone": "+49 171 555 0911"
+    }
+  },
+  "policy": {
+    "policy_number": "DE-AXA-2019-117053",
+    "product": "KFZ Basis — Teilkasko",
+    "tariff_generation": "AKB 2019.3",
+    "underwriting_insurer": "AXA Versicherung AG",
+    "broker_id": "BRK-MUC-0042",
+    "effective_date": "2019-05-01",
+    "renewal_date": "2026-05-01",
+    "cancellation_status": "active",
+    "premium_status": "paid",
+    "arrears_eur": 0
+  },
+  "vehicle": {
+    "plate": "M-HS 1954",
+    "vin": "WAUZZZ4G7FN012345",
+    "make": "Audi",
+    "model": "A3 Sportback",
+    "first_registration": "2015-03-01",
+    "engine_kw": 81,
+    "fuel": "diesel",
+    "vehicle_value_inception_eur": 18500,
+    "current_sum_insured_eur": 9500,
+    "use_type": "private",
+    "annual_mileage_band": "0-5000",
+    "garage_address": "Lindenweg 8, 80331 München (carport)",
+    "modifications": []
+  },
+  "coverage": {
+    "liability_sum_eur": 100000000,
+    "kasko_type": "Teilkasko",
+    "deductible_kasko_eur": null,
+    "deductible_teilkasko_eur": 150,
+    "deductible_liability_eur": 0,
+    "addons": ["Schutzbrief"],
+    "sf_class_liability": "SF35",
+    "sf_class_kasko": "SF35",
+    "rabattschutz": false,
+    "werkstattbindung": false,
+    "werkstatt_network": null,
+    "auslandsschadenschutz": false,
+    "gap_coverage": false
+  },
+  "driver_scope": {
+    "type": "named",
+    "named_drivers": ["Helga Schmidt", "Markus Schmidt"],
+    "open_clause": false,
+    "age_restriction_min": 23,
+    "youngest_driver_dob": "1982-09-12",
+    "license_since": "1972-08-14",
+    "occasional_drivers_surcharge": false
+  },
+  "geographic_temporal": {
+    "country_coverage": "EU + Green Card",
+    "saisonkennzeichen": null,
+    "short_term_policy": false
+  },
+  "exclusions": {
+    "race_track_excluded": true,
+    "gross_negligence_clause": "standard",
+    "telematics_active": false,
+    "individual_endorsements": []
+  },
+  "obligations": {
+    "reporting_deadline_days": 7,
+    "police_required_for": ["theft", "wildlife", "hit_and_run"],
+    "repair_authorization_required": false
+  },
+  "claims_history": {
+    "total_claims": 3,
+    "last_claim_date": "2023-02-11",
+    "last_claim_type": "wildlife_collision",
+    "last_claim_amount_eur": 2100,
+    "open_claims": [],
+    "fraud_flags": false,
+    "his_hits": 0,
+    "prior_denials": []
+  },
+  "pre_existing_damage": [
+    {
+      "area": "front left fender",
+      "description": "deer-collision repair, documented 2023 — paint match imperfect",
+      "documented_at": "2023-03-04"
+    }
+  ],
+  "vehicle_data": {
+    "current_mileage_km": 38940,
+    "last_hu_au_date": "2024-06-12",
+    "telematics_last_trip_iso": null,
+    "connected_car_partner": null
+  },
+  "communication_history": {
+    "last_contact": "2026-01-08",
+    "last_channel": "phone",
+    "open_tasks": [],
+    "last_nps_score": 7
+  },
+  "consent": {
+    "marketing": false,
+    "telematics": false,
+    "data_sharing_partners": false
+  }
+}

@@ -1,0 +1,115 @@
+{
+  "caller_id": "MAX_MUELLER_001",
+  "policyholder": {
+    "name": "Max Müller",
+    "dob": "1984-03-15",
+    "address": "Hauptstraße 42, 10115 Berlin",
+    "phone": "+49 172 555 0100",
+    "email": "max.mueller@email.de",
+    "preferred_language": "de",
+    "preferred_channel": "phone",
+    "vulnerable_flag": false,
+    "power_of_attorney": null
+  },
+  "policy": {
+    "policy_number": "DE-HUK-2024-884421",
+    "product": "KFZ Komfort — Vollkasko Plus",
+    "tariff_generation": "AKB 2024.1",
+    "underwriting_insurer": "Vorsicht Versicherung AG",
+    "broker_id": null,
+    "effective_date": "2021-04-01",
+    "renewal_date": "2026-01-01",
+    "cancellation_status": "active",
+    "premium_status": "paid",
+    "arrears_eur": 0
+  },
+  "vehicle": {
+    "plate": "B-MM 4421",
+    "vin": "WVWZZZ1JZ3W386752",
+    "make": "Volkswagen",
+    "model": "Golf VIII",
+    "first_registration": "2021-04-01",
+    "engine_kw": 110,
+    "fuel": "petrol",
+    "vehicle_value_inception_eur": 32500,
+    "current_sum_insured_eur": 28000,
+    "use_type": "private",
+    "annual_mileage_band": "10000-15000",
+    "garage_address": "Hauptstraße 42, 10115 Berlin",
+    "modifications": []
+  },
+  "coverage": {
+    "liability_sum_eur": 100000000,
+    "kasko_type": "Vollkasko",
+    "deductible_kasko_eur": 300,
+    "deductible_teilkasko_eur": 150,
+    "deductible_liability_eur": 0,
+    "addons": ["Schutzbrief", "Fahrerschutz", "Rabattschutz"],
+    "sf_class_liability": "SF12",
+    "sf_class_kasko": "SF12",
+    "rabattschutz": true,
+    "werkstattbindung": false,
+    "werkstatt_network": null,
+    "auslandsschadenschutz": true,
+    "gap_coverage": false
+  },
+  "driver_scope": {
+    "type": "named",
+    "named_drivers": ["Max Müller"],
+    "open_clause": false,
+    "age_restriction_min": null,
+    "youngest_driver_dob": "1984-03-15",
+    "license_since": "2003-06-10",
+    "occasional_drivers_surcharge": false
+  },
+  "geographic_temporal": {
+    "country_coverage": "EU + Green Card",
+    "saisonkennzeichen": null,
+    "short_term_policy": false
+  },
+  "exclusions": {
+    "race_track_excluded": true,
+    "gross_negligence_clause": "fully_waived",
+    "telematics_active": true,
+    "individual_endorsements": []
+  },
+  "obligations": {
+    "reporting_deadline_days": 7,
+    "police_required_for": ["theft", "wildlife", "hit_and_run"],
+    "repair_authorization_required": true
+  },
+  "claims_history": {
+    "total_claims": 1,
+    "last_claim_date": "2019-11-02",
+    "last_claim_type": "parking_damage",
+    "last_claim_amount_eur": 850,
+    "open_claims": [],
+    "fraud_flags": false,
+    "his_hits": 0,
+    "prior_denials": []
+  },
+  "pre_existing_damage": [
+    {
+      "area": "rear bumper",
+      "description": "minor scuff, documented during 2024 underwriting photo session",
+      "documented_at": "2024-02-15"
+    }
+  ],
+  "vehicle_data": {
+    "current_mileage_km": 41200,
+    "last_hu_au_date": "2025-09-01",
+    "telematics_last_trip_iso": "2026-04-25T07:42:00+02:00",
+    "connected_car_partner": "VW Car-Net"
+  },
+  "communication_history": {
+    "last_contact": "2025-12-04",
+    "last_channel": "email",
+    "open_tasks": [],
+    "last_nps_score": 9
+  },
+  "consent": {
+    "marketing": true,
+    "telematics": true,
+    "data_sharing_partners": false
+  }
+}
