@@ -57,6 +57,25 @@ class OllamaBrain:
             self._real = False
         return self._real
 
+    def probe_sync(self, timeout: float = 2.0) -> bool:
+        # Sync sibling of _probe — the brain factory runs outside an event
+        # loop and needs a yes/no answer before returning the brain.
+        if self._real is not None:
+            return bool(self._real)
+        try:
+            with httpx.Client(timeout=timeout) as c:
+                r = c.get(f"{self.base_url}/api/tags")
+                if r.status_code != 200:
+                    self._real = False
+                    return False
+                tags = r.json().get("models", [])
+                names = {m.get("name", "").split(":")[0] for m in tags}
+                base = self.model_name.split(":")[0]
+                self._real = base in names or any(n.startswith(base) for n in names)
+        except Exception:
+            self._real = False
+        return bool(self._real)
+
     async def stream_reply(
         self,
         system_prompt: str,

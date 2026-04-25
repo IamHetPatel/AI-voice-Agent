@@ -57,7 +57,12 @@ def _try_ollama() -> Brain | None:
     try:
         from .ollama_brain import OllamaBrain
         b = OllamaBrain()
-        if not b._real:
+        if not b.probe_sync():
+            print(
+                f"  [brain] ollama not reachable at {b.base_url} "
+                f"or model '{b.model_name}' not pulled — falling through",
+                file=sys.stderr,
+            )
             return None
         return b
     except Exception as e:
