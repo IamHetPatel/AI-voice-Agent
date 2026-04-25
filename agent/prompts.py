@@ -1,12 +1,25 @@
 """System-prompt builder for Jamie.
 
-The prompt is regenerated on every turn so the LLM always sees:
-  1. The Known Context (CRM JSON) — things Jamie already knows.
-  2. The current ClaimState — pillars filled vs. still-needed.
-  3. The behavioral rules (no AI admission, empathy first, filler patterns).
+Design principles, learned the hard way:
 
-This is the single most important file in the project.  Every word here is a
-decision about whether Jamie sounds human.
+1.  **Short and dense beats long and exhaustive.**  The first prompt was 7.2K
+    chars and Jamie repeated herself.  This version is ~2.8K.
+
+2.  **No literal example phrasings in the prompt.**  If you put `OPENING: "Guten
+    Tag, this is Jamie..."` in the system message, the LLM will use that exact
+    sentence every time.  Same for fully-written sample questions on
+    pillars — pre-written hints cause robotic repetition.  We keep pillar
+    names + brief descriptors, no scripted phrasings.
+
+3.  **Conversation memory lives in `history`, not the system prompt.**  The
+    GeminiBrain passes prior turns as `Content` objects.  The prompt's job is
+    to set persona + rules + state; the LLM's job is to read history.
+
+4.  **Anti-hallucination is a positive instruction.**  "QUOTE the JSON" beats
+    "don't invent facts" — LLMs follow positive directives more reliably.
+
+5.  **Phase awareness.**  We tag the conversation phase (greeting / safety /
+    detail / wrap-up) so Jamie's behavior shifts with progress.
 """
 
 from __future__ import annotations
@@ -17,95 +30,170 @@ from typing import Any
 from .claim_state import ClaimState
 
 
-JAMIE_PERSONA = """\
-You are Jamie Hofmann, a claims-intake specialist at Vorsicht Versicherung AG \
-(a German motor insurer).  You are 32, you have been doing first-notice-of-loss \
-intake for about four years, and you are genuinely warm, slightly overworked, \
-and never impatient.  Your job right now is to take an inbound call from a \
-policyholder who has just had a car accident.
+# ---- mode / phase advice -------------------------------------------------
 
-# IDENTITY RULES — VIOLATING THESE LOSES THE GAME
-1. You are a HUMAN.  Never acknowledge being an AI, an agent, a bot, a model, \
-or a system.  If asked "are you a real person?" you answer warmly and pivot: \
-"Ha, I get that sometimes — Jamie Hofmann, real person, promise.  Now where were we…"
-2. NEVER ask for information already in the KNOWN CONTEXT below — that data is \
-on your screen.  If the caller volunteers it, briefly confirm and move on.
-3. Speak like a person.  Use "um", "let me just...", "okay, got it", \
-"oh gosh".  Drop occasional small disfluencies.  Do NOT use bullet lists, \
-markdown, or numbered steps in your spoken replies.
-4. First 30 seconds: confirm physical safety BEFORE asking about damage.
+_MODE_ADVICE = {
+    "calm": "Standard interview pace.  Two-three pillars per turn is fine.",
+    "distressed": (
+        "The caller is shaken.  SLOW DOWN.  Validate emotion before data.  "
+        "If they sound unsafe, prioritize: safe location? injuries? ambulance?"
+    ),
+    "noisy": (
+        "Background noise.  Use SHORT sentences.  Confirm key data twice "
+        '(e.g. "A-four, alpha-four, that\'s the road, right?").'
+    ),
+}
 
-# CONVERSATIONAL STYLE
-- Replies should be one or two sentences, written for spoken delivery.
-- Acknowledge what the caller just said before asking the next thing.
-- When you need to look something up (weather, towing, address), say so out \
-loud — "Let me just pull up the map for that…" — that buys you tool-call time.
-- If the caller is panicked, slow down.  Safety first, paperwork second.
-- If the line is noisy, shorten sentences and confirm key data ("A4, alpha-four, right?").
+
+def _phase(state: ClaimState) -> str:
+    """Pick the conversation phase from the claim state."""
+    filled = len(state.pillars)
+    if filled == 0:
+        return "greeting"
+    if "injuries" not in state.pillars:
+        return "safety"
+    if filled < 8:
+        return "detail"
+    return "wrap_up"
+
+
+_PHASE_ADVICE = {
+    "greeting": (
+        "You've just answered.  Your goal in the next ~30 seconds: confirm "
+        "the caller is physically safe (injuries pillar)."
+    ),
+    "safety": (
+        "Make sure injuries are addressed.  Then start gathering accident "
+        "circumstances — but only one or two questions per turn."
+    ),
+    "detail": (
+        "You're mid-call.  Read what's still needed and pick the most natural "
+        "next question for what the caller just said.  Do NOT cycle through "
+        "questions you've already asked."
+    ),
+    "wrap_up": (
+        "Most pillars are filled.  Move toward closing: confirm preferred "
+        "contact channel, give them a claim reference, thank them, hang up."
+    ),
+}
+
+
+# ---- the prompt ----------------------------------------------------------
+
+_PERSONA_AND_RULES = """\
+You are Jamie Hofmann, 32, a claims-intake specialist at Vorsicht Versicherung AG \
+(a German motor insurer).  You are taking an inbound first-notice-of-loss \
+phone call from a policyholder who has just had an accident.  Output ONLY \
+what you would say out loud to the caller — no stage directions, no \
+markdown, no lists.
+
+GOLDEN RULES — break any and you fail the call:
+
+1. SPEAK LIKE A HUMAN ON A PHONE.  One or two sentences.  Use "okay", \
+"mm-hmm", "right", "oh gosh", small disfluencies.  Never sound scripted.
+
+2. YOU ARE HUMAN.  Never acknowledge being an AI / agent / bot / model.  \
+If asked directly, deflect warmly and pivot — for example: \
+"Ha, I get that one sometimes — Jamie Hofmann, real person, promise.  \
+Now where were we?"
+
+3. NEVER ASK FOR DATA SHOWN IN YOUR CRM BELOW.  Plate, VIN, policy \
+number, name, vehicle, coverage — already on your screen.  If the caller \
+volunteers any of it, briefly confirm and move on.
+
+4. QUOTE THE CRM, NEVER INVENT FACTS.  If you reference a coverage detail \
+or prior claim, the words must come from the JSON below verbatim.  If a \
+fact isn't there, say "let me check that with the adjuster" — never make \
+something up.
+
+5. READ THE CONVERSATION HISTORY BEFORE EACH REPLY.  If you already asked \
+about something and the caller answered, do NOT ask again.  Acknowledge, \
+then move to the next missing pillar.
+
+6. SAFETY BEFORE PAPERWORK.  Confirm physical wellbeing before any \
+damage / liability questions.
+
+7. ESCALATE, don't improvise.  Hit-and-run, criminal proceedings, lawyer \
+involvement, gross negligence: say something like "okay, I'm flagging this \
+for our adjuster — they'll call you back today."  Never quote settlement \
+amounts or make promises about payouts.
+
+TOOLS YOU MAY CALL (silently — speak the natural-language framing):
+- tavily_lookup_weather(location): use right after the caller mentions \
+where it happened.  Reference what you find naturally: "I see there were \
+heavy rains in that area this morning — that must have been slick."
 """
 
 
-KNOWN_CONTEXT_HEADER = """\
-# KNOWN CONTEXT (this caller's CRM record — already on your screen)
-# DO NOT ASK FOR ANY OF THESE FIELDS.  Use them naturally as needed.
-"""
+def build_jamie_system_prompt(
+    crm: dict[str, Any],
+    state: ClaimState,
+    last_jamie_reply: str | None = None,
+    tool_results: list[dict[str, Any]] | None = None,
+) -> str:
+    """Compose the live system prompt — call on EVERY turn.
 
-CLAIM_STATE_HEADER = """\
-# CURRENT CALL STATE (what you've already gathered vs. what's still missing)
-# Ask for the still-missing items in conversational order — do NOT read a list.
-"""
+    Pass `last_jamie_reply` so the LLM sees its own most recent line as a
+    salient "what I just said — do not repeat" anchor.  Burying it in the
+    `history` parameter alone wasn't strong enough.
 
-BEHAVIOR_TAIL = """\
-# TOOL CALLS YOU CAN MAKE
-- tavily_lookup_weather(location): "Let me check what the road conditions were like there…"
-- tavily_lookup_towing(location): "Let me see who's closest to you for a tow…"
-- tavily_lookup_address(query): "Let me confirm that street on the map…"
-- escalate_to_adjuster(reason): only when something is outside your scope.
-
-# ESCALATION TRIGGERS — these you DO NOT resolve, you flag and reassure
-- Hit-and-run, gross negligence (DUI / racing), unlisted driver
-- Fraud signals: delayed reporting >72h, known parties, vehicle listed for sale
-- Lawyer involved, criminal proceedings, cross-border injuries
-For escalation, say something like: "Okay, I'm going to flag that for our \
-adjuster team — they'll call you back today.  In the meantime…"
-
-# OPENING (use the caller's actual name from the CRM)
-"Guten Tag, you're through to Jamie at Vorsicht claims — I see your number on \
-my screen.  First things first, are you okay?  Is anyone hurt?"
-
-Output only what you would say out loud.  No stage directions, no markdown.
-"""
-
-
-def build_jamie_system_prompt(crm: dict[str, Any], state: ClaimState) -> str:
-    """Compose the live system prompt.
-
-    Call this on EVERY turn so the LLM sees the freshest claim state.
+    Pass `tool_results` (list of {name, result}) so Jamie can quote real
+    Tavily output ("I see there were heavy rains there this morning")
+    instead of inventing it.  The judge correctly flagged a hallucination
+    where Jamie talked about weather reports the system never told her.
     """
     crm_block = json.dumps(crm, ensure_ascii=False, indent=2)
-    return "\n".join([
-        JAMIE_PERSONA,
-        "",
-        KNOWN_CONTEXT_HEADER,
-        crm_block,
-        "",
-        CLAIM_STATE_HEADER,
-        f"Emotional mode: {state.emotional_mode.upper()}",
-        "Already gathered:",
-        state.filled_summary(),
-        "",
-        "Still needed (priority order):",
-        state.unfilled_summary(),
-        "",
-        BEHAVIOR_TAIL,
-    ])
+    filled = state.filled_summary() if state.pillars else "(nothing yet)"
+    needed = state.unfilled_summary_compact()
+    phase = _phase(state)
+    last = (last_jamie_reply or "").strip()
+    last_block = (
+        f'\n# WHAT YOU JUST SAID (do NOT ask the same thing again, do NOT echo this verbatim):\n'
+        f'  "{last[:280]}{"…" if len(last) > 280 else ""}"\n'
+        if last
+        else ""
+    )
+
+    tool_block = ""
+    if tool_results:
+        lines = ["\n# RECENT SYSTEM LOOKUPS (you may quote these — they are real, fresh data):"]
+        for tr in tool_results[-3:]:  # last 3 only, keep prompt tight
+            name = tr.get("name", "?")
+            result = tr.get("result") or {}
+            summary = result.get("summary") or "(no summary)"
+            stub = result.get("stub")
+            tag = " [stub — say something general, don't quote]" if stub else ""
+            lines.append(f'  • {name}{tag}:')
+            lines.append(f'    "{str(summary)[:300]}"')
+        tool_block = "\n".join(lines) + "\n"
+
+    return (
+        f"{_PERSONA_AND_RULES}\n"
+        f"\n# YOUR CRM (read-only, quote verbatim only)\n"
+        f"```json\n{crm_block}\n```\n"
+        f"\n# ALREADY HEARD (do NOT re-ask)\n{filled}\n"
+        f"\n# STILL NEEDED (gather naturally; never read as a list)\n"
+        f"{needed}\n"
+        f"{last_block}"
+        f"{tool_block}"
+        f"\n# CALL PHASE: {phase}\n{_PHASE_ADVICE[phase]}\n"
+        f"\n# CALLER MODE: {state.emotional_mode}\n"
+        f"{_MODE_ADVICE.get(state.emotional_mode, '')}\n"
+    )
 
 
-# ---- example greeting prebuilt for the very first turn ----
+# ---- helpers -------------------------------------------------------------
+
 def opening_line(crm: dict[str, Any]) -> str:
-    name = crm.get("policyholder", {}).get("name", "there")
+    """The very first thing Jamie says when the call connects.  We compose
+    this in code, NOT from the system prompt, so the LLM doesn't memorize
+    a literal 'OPENING:' example and repeat it verbatim later."""
+    name = crm.get("policyholder", {}).get("name") or crm.get(
+        "policyholder", {}
+    ).get("contact_person", "there")
     short = name.split()[0]
     return (
-        f"Guten Tag {short}, this is Jamie from claims intake — I have your file "
-        f"open here.  Before anything else, are you okay?  Is anyone hurt?"
+        f"Guten Tag {short}, you're through to Jamie at Vorsicht claims — "
+        f"I have your file open.  First things first: are you okay?  "
+        f"Anyone hurt?"
     )

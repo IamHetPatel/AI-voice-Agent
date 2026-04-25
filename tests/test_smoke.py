@@ -57,9 +57,42 @@ def test_prompt_builder_includes_crm():
     from agent.prompts import build_jamie_system_prompt
     crm = json.loads((REPO / "data" / "crm" / "max_mueller.json").read_text())
     p = build_jamie_system_prompt(crm, ClaimState(call_id="t"))
+    # The prompt must inline the CRM
     assert "Max Müller" in p
     assert "Volkswagen" in p
-    assert "DO NOT ASK" in p
+    # ...and must include the anti-hallucination + anti-repetition rules
+    assert "QUOTE THE CRM" in p
+    assert "READ THE CONVERSATION HISTORY" in p
+    assert "NEVER ASK FOR DATA SHOWN" in p
+
+
+def test_prompt_rules_section_is_tight():
+    """The repetition-causing bloat was in the *rules* section, not the
+    CRM JSON dump (which is just reference data the LLM consults).  This
+    test guards against rule-creep — if anyone adds long inline examples
+    or scripted phrasings, the rules section will grow and Jamie will
+    start parroting them.  CRM data is allowed to be as big as the
+    actual JSON requires."""
+    from agent.prompts import _PERSONA_AND_RULES
+    assert len(_PERSONA_AND_RULES) < 2200, (
+        f"rules section is {len(_PERSONA_AND_RULES)} chars — keep it under 2200 "
+        "or add a justification.  Long rules = diluted instructions = repetition."
+    )
+
+
+def test_unfilled_summary_has_no_scripted_questions():
+    """Pre-written sample questions in the system prompt cause the LLM to
+    reuse them verbatim every turn.  We removed the hint phrasings; this
+    test guards against accidentally re-introducing them."""
+    from agent.claim_state import ClaimState
+    s = ClaimState(call_id="t")
+    summary = s.unfilled_summary_compact()
+    # Forbidden literal phrasings from the old hints:
+    forbidden = ["Are you or anyone else hurt?", "When exactly did this happen?",
+                 "Do you have the other party's license plate?",
+                 "Were the police called?"]
+    for f in forbidden:
+        assert f not in summary, f"scripted question leaked: {f!r}"
 
 
 def test_tavily_stub_runs():

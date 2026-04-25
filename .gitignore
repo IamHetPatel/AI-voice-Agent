@@ -41,10 +41,11 @@ models/
 *.bin
 *.safetensors
 
-# Logs / transcripts (may contain PII)
+# Logs / transcripts (may contain PII even with redaction)
 logs/
 transcripts/
 *.log
+!transcripts/.gitkeep
 
 # Entire local cache
 .entire/

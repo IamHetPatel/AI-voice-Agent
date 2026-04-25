@@ -12,25 +12,29 @@ from datetime import datetime, timezone
 from typing import Any
 
 
-# Order = priority order in which Jamie should gather them.  Pillar 1
-# ("policy & vehicle ID") is intentionally absent because it lives in the
-# Known Context — Jamie must NEVER ask for it.
+# Order = priority order Jamie should gather these.  Pillar 1 ("policy &
+# vehicle ID") is intentionally absent — it lives in the CRM, Jamie must
+# never ask for it.
+#
+# Each entry is (id, short_descriptor).  We deliberately do NOT include a
+# pre-written sample question — putting one in the system prompt biases
+# the LLM to use that exact phrasing every turn (we observed this).
 PILLARS: list[tuple[str, str]] = [
-    ("injuries", "Are you or anyone else hurt? Anyone need an ambulance?"),
-    ("accident_datetime", "When exactly did this happen? Date and time."),
-    ("accident_location", "Where were you? Address or road name."),
-    ("road_type", "Was that on the Autobahn, a city street, parking lot...?"),
-    ("how_it_happened", "Walk me through what happened, in your own words."),
-    ("vehicle_drivable", "Is the car still drivable? Where is it right now?"),
-    ("other_party_involved", "Was another vehicle or person involved?"),
-    ("other_party_plate", "Do you have the other party's license plate?"),
-    ("other_party_insurer", "Do you know who their insurer is?"),
-    ("police_involved", "Were the police called?"),
-    ("police_case_number", "Do you have a police case or reference number?"),
-    ("witnesses", "Were there any independent witnesses?"),
-    ("driver_identity", "Were you driving, or was someone else?"),
-    ("fault_admission", "Did anyone say anything about whose fault it was?"),
-    ("settlement_preference", "Any preference on a repair shop, or do you need a rental?"),
+    ("injuries",              "anyone hurt — caller, passengers, third party"),
+    ("accident_datetime",     "when (date + time)"),
+    ("accident_location",     "where (address / road name)"),
+    ("road_type",             "Autobahn / city street / parking lot / other"),
+    ("how_it_happened",       "free-form description of the incident"),
+    ("vehicle_drivable",      "is the car drivable + current location"),
+    ("other_party_involved",  "was anyone else involved"),
+    ("other_party_plate",     "other vehicle license plate"),
+    ("other_party_insurer",   "other party's insurer"),
+    ("police_involved",       "was police called"),
+    ("police_case_number",    "police case / reference number"),
+    ("witnesses",             "independent witnesses (name + contact)"),
+    ("driver_identity",       "who was driving (if not policyholder)"),
+    ("fault_admission",       "anything said about fault at the scene"),
+    ("settlement_preference", "preferred repair shop / need a rental"),
 ]
 
 FRAUD_LABELS: list[str] = [
@@ -83,10 +87,32 @@ class ClaimState:
         return [(k, q) for (k, q) in PILLARS if k not in self.pillars]
 
     def unfilled_summary(self) -> str:
+        """Legacy — keep for backwards compat.  Prefer unfilled_summary_compact."""
         unfilled = self.unfilled_pillars()
         if not unfilled:
             return "(all gathered — wrap up the call warmly)"
         return "\n".join(f"  - {label}: {hint}" for label, hint in unfilled)
+
+    def unfilled_summary_compact(self) -> str:
+        """One-line-per-pillar summary, NO scripted question phrasings.
+
+        Used by the v2 system prompt — the absence of pre-written
+        questions is by design, so Jamie phrases each ask fresh and
+        in-context instead of repeating a template."""
+        unfilled = self.unfilled_pillars()
+        if not unfilled:
+            return "(all 15 pillars gathered — wrap up warmly with a claim reference)"
+        # Top-3 are highest priority, the rest are reference-only
+        top = unfilled[:3]
+        rest = unfilled[3:]
+        out = ["FOCUS NOW (priority order):"]
+        for lab, desc in top:
+            out.append(f"  • {lab}  —  {desc}")
+        if rest:
+            out.append("Later (reference only, don't read as a list):")
+            for lab, desc in rest:
+                out.append(f"  · {lab}  —  {desc}")
+        return "\n".join(out)
 
     def fraud_risk_score(self) -> int:
         """Return 0..10 based on number/severity of flagged signals."""

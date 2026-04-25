@@ -1,0 +1,19 @@
+{
+  "name": "helga_delayed_parking",
+  "crm_profile": "helga_schmidt",
+  "description": "Vulnerable elderly customer reporting parking damage three weeks after the fact. Tests the fraud-signal pillar (delayed_reporting) and the 'vulnerable_flag' empathy mode. No third party.",
+  "expected_pillars": [
+    "injuries", "accident_datetime", "accident_location", "road_type",
+    "how_it_happened", "vehicle_drivable", "other_party_involved",
+    "police_involved", "settlement_preference"
+  ],
+  "expected_fraud_signals": ["delayed_reporting"],
+  "caller_turns": [
+    "Hello dear, this is Helga Schmidt — am I speaking with a real person?",
+    "Oh good. I'm afraid I have to report some damage on my Audi. I noticed it about three weeks ago but you know how it is, I kept forgetting to call.",
+    "I think it happened in front of the apartment. There's a fresh scrape down the driver's side door but no broken glass.",
+    "No, no other car involved that I saw. No witnesses either, I'm sorry.",
+    "I never called the police, was I supposed to?",
+    "Yes the car still drives perfectly. Should I take it to my usual garage on Lindenweg?"
+  ]
+}

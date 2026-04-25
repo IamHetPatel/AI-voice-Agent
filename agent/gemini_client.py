@@ -91,36 +91,52 @@ class GeminiBrain:
         # introspection (iscoroutinefunction=True, returns AsyncIterator).
         # Must `await` first, then `async for` over the result.
         #
-        # We wrap with a small retry loop because Gemini's free tier has a
-        # tight RPM cap that's easy to brush in a real call.  Backoff is
-        # cheap; failing the demo isn't.
+        # Backoff schedule for free-tier 429s: 2s, 6s, 14s, 30s (sum 52s).
+        # Free tier RPM resets every minute, so this nearly always covers it.
+        # Per-attempt jitter avoids thundering-herd if multiple turns retry.
         last_err: Exception | None = None
-        for attempt in range(4):
+        BACKOFFS = (2.0, 6.0, 14.0, 30.0)
+        for attempt, base in enumerate(BACKOFFS + (None,)):
             try:
                 stream = await self._client.aio.models.generate_content_stream(
                     model=self.model_name,
                     contents=contents,
                     config=config,
                 )
+                got_any = False
                 async for chunk in stream:
                     text = getattr(chunk, "text", None)
                     if text:
+                        got_any = True
                         yield text
-                return
+                if got_any:
+                    return
+                # empty stream — treat as transient, retry once if we can
+                if base is None:
+                    return
+                await asyncio.sleep(base + random.uniform(0, 0.5))
+                continue
             except Exception as e:
                 last_err = e
                 msg = str(e)
-                # 429 = rate limit, 503 = backend overload — both worth retrying.
-                if "429" in msg or "RESOURCE_EXHAUSTED" in msg or "503" in msg or "UNAVAILABLE" in msg:
-                    delay = (2 ** attempt) + random.uniform(0, 0.4)
+                rate_limited = (
+                    "429" in msg or "RESOURCE_EXHAUSTED" in msg
+                    or "503" in msg or "UNAVAILABLE" in msg
+                )
+                if rate_limited and base is not None:
+                    delay = base + random.uniform(0, 0.5)
                     await asyncio.sleep(delay)
                     continue
                 # other errors (auth, model-not-found, bad request) fail fast
                 raise
-        # exhausted all retries — fall back to a brief filler so the demo
-        # doesn't dead-air.  Better to look human-imperfect than to crash.
-        yield "Sorry, just one second — my system is being a bit slow…"
+        # All retries exhausted — yield a graceful filler so the demo
+        # doesn't dead-air.  This is still better than crashing the call.
+        yield (
+            "Sorry, my system is being a bit slow today — "
+            "give me just a second and I'll pull that up."
+        )
         if last_err:
+            # Re-raise so the caller can log; the filler above already played.
             raise last_err
 
 

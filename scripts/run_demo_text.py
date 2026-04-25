@@ -103,6 +103,7 @@ async def run() -> None:
     history: list[dict[str, str]] = [
         {"role": "model", "text": opener},
     ]
+    tool_results: list[dict] = []
 
     while True:
         try:
@@ -128,6 +129,7 @@ async def run() -> None:
             fn = TAVILY_DISPATCH[name]
             result = await asyncio.to_thread(fn, **args_)
             await emit({"type": "tool_result", "name": name, "result": result})
+            tool_results.append({"name": name, "result": result})
 
         # Extract pillars from caller text → state + bridge
         extr = await asyncio.to_thread(extractor.extract, user)
@@ -140,8 +142,18 @@ async def run() -> None:
             await emit({"type": "fraud_signal", "signal": label,
                         "severity": "medium", "evidence": info["text"]})
 
-        # Generate Jamie's reply (streaming)
-        sys_prompt = build_jamie_system_prompt(crm, state)
+        # Generate Jamie's reply (streaming).  We pass her own most-recent
+        # line into the system prompt so the "WHAT YOU JUST SAID" anchor
+        # is salient — burying it in `history` alone wasn't strong enough.
+        last_jamie = next(
+            (h["text"] for h in reversed(history) if h["role"] == "model"),
+            None,
+        )
+        sys_prompt = build_jamie_system_prompt(
+            crm, state,
+            last_jamie_reply=last_jamie,
+            tool_results=tool_results,
+        )
         chunks: list[str] = []
         sys.stdout.write("Jamie: ")
         sys.stdout.flush()

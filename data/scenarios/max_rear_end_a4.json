@@ -1,0 +1,18 @@
+{
+  "name": "max_rear_end_a4",
+  "crm_profile": "max_mueller",
+  "description": "Vollkasko driver rear-ended on the A4 near Köln-Ost in heavy rain. No injuries, other party admitted fault, police came. Showcases Tavily weather lookup + clean pillar progression.",
+  "expected_pillars": [
+    "injuries", "accident_datetime", "accident_location", "road_type",
+    "weather_conditions", "how_it_happened", "vehicle_drivable",
+    "other_party_involved", "other_party_plate", "other_party_insurer",
+    "police_involved", "police_case_number", "fault_admission"
+  ],
+  "caller_turns": [
+    "Hi, no — no one's hurt, thankfully. But my car was rear-ended.",
+    "It was about 30 minutes ago, on the A4 heading east, just past the Köln-Ost exit. Pouring rain, basically a brake-check accident.",
+    "The other guy admitted it was his fault at the scene. He had a BMW, plate K-AB 1234. He said he's with HUK-Coburg.",
+    "Yeah, the police came. The case number is — let me find it — 2026-04-25-7711.",
+    "Honestly the bumper is dented but I think I can drive it home. Should I drop it at a workshop?"
+  ]
+}
