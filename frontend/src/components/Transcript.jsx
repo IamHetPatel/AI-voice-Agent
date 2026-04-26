@@ -34,16 +34,27 @@ export default function Transcript({ transcript }) {
     endRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [transcript.length])
 
+  // Group messages from same speaker if they occur within 5 seconds of each other
+  const grouped = transcript.reduce((acc, curr) => {
+    const last = acc[acc.length - 1]
+    if (last && last.speaker === curr.speaker) {
+      last.text += ' ' + curr.text
+      last.ts = curr.ts // Update to latest timestamp
+      return acc
+    }
+    return [...acc, { ...curr }]
+  }, [])
+
   return (
     <div className={styles.feed}>
-      {transcript.length === 0 && (
+      {grouped.length === 0 && (
         <div className={styles.empty}>
           <div className={styles.emptyIcon}>🎙</div>
           <div>Waiting for the call to connect…</div>
           <div className={styles.emptyHint}>Make sure the LiveKit agent worker is running</div>
         </div>
       )}
-      {transcript.map((t, i) => <Bubble key={i} entry={t} />)}
+      {grouped.map((t, i) => <Bubble key={i} entry={t} />)}
       <div ref={endRef} />
     </div>
   )
