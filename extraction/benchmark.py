@@ -125,7 +125,12 @@ def bench_gliner_finetuned() -> dict | None:
         repo_root / "models" / "jamie-gliner",  # legacy name
     ]
     for path in candidates:
-        if path.exists() and (path / "config.json").exists():
+        # GLiNER saves the config as gliner_config.json (not the standard
+        # transformers config.json), so check for either.
+        if path.exists() and (
+            (path / "gliner_config.json").exists()
+            or (path / "config.json").exists()
+        ):
             svc = ExtractionService(model_name=str(path))
             return _bench_gliner_with(
                 svc, f"GLiNER fine-tuned (jamie-fnol → {path.name})"
