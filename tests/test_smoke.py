@@ -107,7 +107,11 @@ def test_prompt_builder_includes_crm():
     # ...and must include the load-bearing rules.  Phrasings updated for
     # the multi-domain pivot ("CONTEXT" not "CRM", but functionally same).
     assert "QUOTE THE CONTEXT" in p
-    assert "ACKNOWLEDGE THE CALLER" in p
+    # Rule 1 shifted from "ALWAYS ACKNOWLEDGE..." (which was producing
+    # mechanical echo-back) to "REACT NATURALLY" — varied human beats,
+    # ban echo of caller's exact words.  Same load-bearing intent, new
+    # keyword.
+    assert "REACT NATURALLY" in p
     assert "NEVER ASK FOR DATA SHOWN" in p
     assert "CAPTURE OPPORTUNISTICALLY" in p
 
