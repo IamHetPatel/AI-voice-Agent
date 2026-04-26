@@ -96,7 +96,7 @@ unfolded.
 
 | Date | Dispatch | Phase summary |
 |---|---|---|
-| _initial_ | [docs/entire-dispatches/](docs/entire-dispatches/) | per-commit reasoning archive |
+| 2026-04-26 | [docs/entire-dispatches/2026-04-26.md](docs/entire-dispatches/2026-04-26.md) | Full hackathon decision narrative — STT segmentation fix, Pioneer fine-tune, Gradium pronunciation dict (incl. undocumented API discovery), Aikido scan + PII expansion, Tavily 5-surface grounding, architecture pivot to custom GeminiBrain, demo-day resilience layers |
 
 To capture a fresh dispatch covering everything since the last entry:
 
