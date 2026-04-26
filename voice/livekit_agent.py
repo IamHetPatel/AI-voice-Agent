@@ -246,9 +246,27 @@ async def entrypoint(ctx: JobContext) -> None:
     # we get per-turn CRM context + claim state injection.  The Agent object
     # here is purely an audio pipeline shell (STT / TTS / VAD).
     vad = lk_silero.VAD.load()
-    # temperature=0.0 suppresses Whisper-style noise hallucinations
-    # ("Marama", "Thank you", "I live in Chicago" from background ambient sound)
-    stt = lk_gradium.STT(temperature=0.0)
+
+    # ── STT: try Gradium first, fall back to Deepgram on credit/auth failures ──
+    # Gradium credits can be exhausted mid-hackathon.  If DEEPGRAM_API_KEY is
+    # set in .env we silently fall over without losing the call.
+    stt: Any
+    deepgram_key = os.environ.get("DEEPGRAM_API_KEY")
+    try:
+        stt = lk_gradium.STT(temperature=0.0)
+        print("  [stt] using Gradium", file=sys.stderr)
+    except Exception as e:
+        if deepgram_key:
+            try:
+                from livekit.plugins import deepgram as lk_deepgram  # type: ignore
+                stt = lk_deepgram.STT(api_key=deepgram_key)
+                print("  [stt] Gradium failed, using Deepgram fallback", file=sys.stderr)
+            except Exception as e2:
+                print(f"  [stt] ⚠ both STT providers failed: {e2}", file=sys.stderr)
+                raise
+        else:
+            raise
+
     tts = lk_gradium.TTS(**tts_kwargs)
 
     agent = Agent(
