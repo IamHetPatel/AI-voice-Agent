@@ -59,8 +59,10 @@ try:
         JobContext,
         WorkerOptions,
         cli,
+        RoomInputOptions,
     )
     from livekit.agents.voice import Agent, AgentSession
+    from livekit.plugins import ai_coustics
     from livekit.plugins import gradium as lk_gradium
     from livekit.plugins import silero as lk_silero
     _VOICE_DEPS = True
@@ -245,28 +247,34 @@ async def entrypoint(ctx: JobContext) -> None:
     # NOTE: We pass NO `llm=` here. GeminiBrain handles LLM logic manually so
     # we get per-turn CRM context + claim state injection.  The Agent object
     # here is purely an audio pipeline shell (STT / TTS / VAD).
-    vad = lk_silero.VAD.load()
-
-    # ── STT: try Gradium first, fall back to Deepgram on credit/auth failures ──
-    # Gradium credits can be exhausted mid-hackathon.  If DEEPGRAM_API_KEY is
-    # set in .env we silently fall over without losing the call.
-    stt: Any
-    deepgram_key = os.environ.get("DEEPGRAM_API_KEY")
-    try:
-        stt = lk_gradium.STT(temperature=0.0)
-        print("  [stt] using Gradium", file=sys.stderr)
-    except Exception as e:
-        if deepgram_key:
-            try:
-                from livekit.plugins import deepgram as lk_deepgram  # type: ignore
-                stt = lk_deepgram.STT(api_key=deepgram_key)
-                print("  [stt] Gradium failed, using Deepgram fallback", file=sys.stderr)
-            except Exception as e2:
-                print(f"  [stt] ⚠ both STT providers failed: {e2}", file=sys.stderr)
-                raise
-        else:
-            raise
-
+    vad = ai_coustics.VAD()
+    # Gradium STT — three knobs working together to stop the live
+    # fragment-as-turn segmentation issue (one continuous statement
+    # producing 3-4 separate user_input_transcribed events with
+    # is_final=True) without adding perceived latency:
+    #
+    #   temperature=0.0 suppresses Whisper-style noise hallucinations
+    #     ("Marama", "Thank you", "I live in Chicago" from background
+    #     ambient sound).
+    #
+    #   vad_threshold=0.85 (up from SDK default 0.6) requires MORE
+    #     confident silence before Gradium emits a final transcript.
+    #     Mid-sentence breaths under that threshold get batched into
+    #     the same transcript instead of fragmenting into separate
+    #     user_input_transcribed events that each fire a turn.
+    #
+    #   buffer_size_seconds=0.12 (up from default 0.08) widens the
+    #     interim-transcript debounce window so micro-fragments
+    #     collapse into one event before reaching the listener.
+    #
+    # All three env-overridable so they can be retuned at the venue
+    # without a redeploy.  These are the surviving STT-segmentation
+    # fixes applicable to the current GeminiBrain-direct architecture.
+    stt = lk_gradium.STT(
+        temperature=0.0,
+        vad_threshold=float(os.environ.get("GRADIUM_VAD_THRESHOLD", 0.85)),
+        buffer_size_seconds=float(os.environ.get("GRADIUM_BUFFER_S", 0.12)),
+    )
     tts = lk_gradium.TTS(**tts_kwargs)
 
     agent = Agent(
@@ -360,8 +368,21 @@ async def entrypoint(ctx: JobContext) -> None:
         history.append({"role": "model", "text": reply})
 
     # ── start the session and speak the opener ─────────────────────────────
+    # Use AI-coustics to suppress highway/background noise for INCA challenge
+    room_input_options = RoomInputOptions(
+        noise_cancellation=ai_coustics.audio_enhancement(
+            model=ai_coustics.EnhancerModel.QUAIL_VF_L,
+            model_parameters=ai_coustics.ModelParameters(enhancement_level=0.8),
+            vad_settings=ai_coustics.VadSettings(
+                speech_hold_duration=0.03,
+                sensitivity=6.0,
+                minimum_speech_duration=0.0,
+            )
+        )
+    )
+
     agent_task = asyncio.create_task(
-        session.start(agent, room=ctx.room)
+        session.start(agent, room=ctx.room, room_input_options=room_input_options)
     )
 
     # Small pause to let the audio pipeline initialise before speaking
