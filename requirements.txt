@@ -26,8 +26,8 @@ tavily-python>=0.5.0
 # --- Extraction (Pioneer / Fastino bounty) ---
 # current PyPI: gliner 0.2.26
 gliner>=0.2.13
-transformers>=4.45.0
-torch>=2.4.0
+transformers==4.53.0
+torch==2.8.0
 huggingface-hub>=0.25.0
 # accelerate is required by transformers.Trainer for both CPU + MPS/CUDA
 # fine-tunes — extraction/finetune_gliner.py won't start without it.
@@ -43,8 +43,10 @@ uvicorn[standard]>=0.30.0
 websockets>=13.0
 
 # --- Utility ---
-python-dotenv>=1.0.1
+python-dotenv==1.2.2
 pydantic>=2.9.0
 rich>=13.8.0                  # pretty CLI for demo runner
 httpx>=0.27.0
-orjson>=3.10.0
+orjson==3.11.6
+
+pillow==12.2.0
