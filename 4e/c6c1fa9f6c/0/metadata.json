@@ -1,0 +1,68 @@
+{
+  "cli_version": "0.5.6",
+  "checkpoint_id": "4ec6c1fa9f6c",
+  "session_id": "5a7e065b-9a5e-4582-ad1b-56b5947280de",
+  "strategy": "manual-commit",
+  "created_at": "2026-04-26T06:39:37.124763Z",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "agent/claim_state.py",
+    "agent/prompts.py",
+    "data/crm/max_mueller.json",
+    "frontend/index.html",
+    "frontend/package-lock.json",
+    "frontend/package.json",
+    "frontend/src/App.jsx",
+    "frontend/src/App.module.css",
+    "frontend/src/components/ClaimProgress.jsx",
+    "frontend/src/components/ClaimProgress.module.css",
+    "frontend/src/components/FraudGauge.jsx",
+    "frontend/src/components/FraudGauge.module.css",
+    "frontend/src/components/JamieAvatar.jsx",
+    "frontend/src/components/JamieAvatar.module.css",
+    "frontend/src/components/Transcript.jsx",
+    "frontend/src/components/Transcript.module.css",
+    "frontend/src/hooks/useJamieSocket.js",
+    "frontend/src/index.css",
+    "frontend/src/main.jsx",
+    "frontend/vite.config.js",
+    "tests/juror_bot.py",
+    "voice/livekit_agent.py"
+  ],
+  "agent": "Claude Code",
+  "model": "",
+  "turn_id": "2852bcfc749b",
+  "token_usage": {
+    "input_tokens": 0,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0,
+    "api_call_count": 1
+  },
+  "initial_attribution": {
+    "calculated_at": "2026-04-26T06:39:37.121826Z",
+    "agent_lines": 3165,
+    "agent_removed": 42,
+    "human_added": 0,
+    "human_modified": 0,
+    "human_removed": 0,
+    "total_committed": 3165,
+    "total_lines_changed": 3207,
+    "agent_percentage": 100,
+    "metric_version": 2
+  },
+  "prompt_attributions": [
+    {
+      "checkpoint_number": 1,
+      "user_lines_added": 743,
+      "user_lines_removed": 0,
+      "agent_lines_added": 0,
+      "agent_lines_removed": 0,
+      "user_added_per_file": {
+        ".env copy.example": 155,
+        "voice/livekit_agent copy.py": 588
+      }
+    }
+  ]
+}

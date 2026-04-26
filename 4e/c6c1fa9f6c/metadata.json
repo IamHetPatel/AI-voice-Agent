@@ -1,0 +1,46 @@
+{
+  "cli_version": "0.5.6",
+  "checkpoint_id": "4ec6c1fa9f6c",
+  "strategy": "manual-commit",
+  "branch": "main",
+  "checkpoints_count": 0,
+  "files_touched": [
+    "agent/claim_state.py",
+    "agent/prompts.py",
+    "data/crm/max_mueller.json",
+    "frontend/index.html",
+    "frontend/package-lock.json",
+    "frontend/package.json",
+    "frontend/src/App.jsx",
+    "frontend/src/App.module.css",
+    "frontend/src/components/ClaimProgress.jsx",
+    "frontend/src/components/ClaimProgress.module.css",
+    "frontend/src/components/FraudGauge.jsx",
+    "frontend/src/components/FraudGauge.module.css",
+    "frontend/src/components/JamieAvatar.jsx",
+    "frontend/src/components/JamieAvatar.module.css",
+    "frontend/src/components/Transcript.jsx",
+    "frontend/src/components/Transcript.module.css",
+    "frontend/src/hooks/useJamieSocket.js",
+    "frontend/src/index.css",
+    "frontend/src/main.jsx",
+    "frontend/vite.config.js",
+    "tests/juror_bot.py",
+    "voice/livekit_agent.py"
+  ],
+  "sessions": [
+    {
+      "metadata": "/4e/c6c1fa9f6c/0/metadata.json",
+      "transcript": "/4e/c6c1fa9f6c/0/full.jsonl",
+      "content_hash": "/4e/c6c1fa9f6c/0/content_hash.txt",
+      "prompt": "/4e/c6c1fa9f6c/0/prompt.txt"
+    }
+  ],
+  "token_usage": {
+    "input_tokens": 0,
+    "cache_creation_tokens": 0,
+    "cache_read_tokens": 0,
+    "output_tokens": 0,
+    "api_call_count": 1
+  }
+}
