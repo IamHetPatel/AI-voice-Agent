@@ -101,7 +101,7 @@ def _gemini_client():
         return None
 
 
-_JUROR_MODEL = os.environ.get("JUROR_GEMINI_MODEL", "gemini-2.5-flash-lite")
+_JUROR_MODEL = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
 
 
 async def _juror_turn(juror_system: str, transcript: list[dict]) -> str:
