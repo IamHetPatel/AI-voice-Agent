@@ -1,90 +1,81 @@
-# Speaker notes — Caution Claims · 2-minute pitch
+# Speaker notes — EchoClaim · 2-minute pitch
 
-Read these *while the deck advances*. Each block is timed to a slide's `data-dur` attribute so the slides + voiceover stay synced.
+**4 slides · ~43s of slide-time · ~75s for the live demo cut · total = 1:58.**
 
-Total deck-only time: ~94 s. Leave ~25 s of that for **dashboard recording cuts** between slides 5 ↔ 6 and slides 6 ↔ 7. If you nail this, you land at **~2:00 ± 5 s**.
-
----
-
-## Slide 1 · Title (0:00 – 0:10)
-
-> *"This is **Caution Claims**. Our entry for Inca's Human Test at Big Berlin Hack."*
-
-Beat. Let the gradient title breathe.
+The slides are intentionally minimal — the demo carries the show. Read the lines below at a normal phone-conversation pace; the auto-advance timing is set to match.
 
 ---
 
-## Slide 2 · The challenge (0:10 – 0:19)
+## Slide 1 · Title (0:00 – 0:09)
 
-> *"Inca's brief was specific: build a phone agent that fools blind jurors into voting 'human'. They call you. You don't see them. They vote with their gut."*
+> *"This is **EchoClaim** — voice that understands, claims that move. Our entry to Inca's Human Test."*
 
----
-
-## Slide 3 · The threshold (0:19 – 0:27)
-
-> *"Three things have to land at once. More than half of jurors voting human. Complete claim documentation captured live. And consistency across dialects, highway noise, panicked callers — the whole call-centre nightmare."*
+Hold for the logo + tagline to land.
 
 ---
 
-## Slide 4 · The insight (0:27 – 0:38)
+## Slide 2 · The hook (0:09 – 0:15)
 
-> *"Our insight is that real claims agents don't ask stupid questions. The caller's name, policy, vehicle, coverage — that's already on the screen before the phone rings. So is ours. Our agent — Jamie — speaks from knowledge, not from a questionnaire. Three layers make that work: known data injected every turn, asked-pillars tracked so she never repeats, and Tavily lookups firing invisibly so she casually quotes real conditions."*
+> *"Inca asked us to build a phone agent that fools jurors into voting human. So we built one that **already knows the caller** before they say a word. Watch."*
 
----
-
-## Slide 5 · A real turn (0:38 – 0:47)
-
-> *"Here's what one actual call sounds like. Sofia calls about her physio claim. Jamie already knows her, knows her ytd-usage, asks the one question that closes the gap."*
-
-— at this beat, **CUT TO YOUR DASHBOARD RECORDING** for ~25–30 seconds. The dashboard you screenshotted, with Max's call running live. Pillars ticking. Tavily firing. Live transcript scrolling. End the cut on the "FINAL CLAIM EXPORT" panel showing the JSON.
+→ at the arrow, **CUT TO YOUR LIVE DASHBOARD RECORDING**.
 
 ---
 
-## Slide 6 · Multi-domain (0:47 – 0:58)
+## DEMO CUT (0:15 – 1:30) · ~75 seconds
 
-> *"Same engine. Different domain config. Three insurance lines shipping today: car FNOL, private health, and Hausrat theft. Each one is a JSON file under data/domains. Banking, telco, life — drop a config, the engine re-targets itself. Inca asked for broad. We went broad."*
+This is the meat. Show your dashboard from the screenshot, with the call running:
 
----
+- The CRM panel populates instantly — the agent already has the caller's name, policy, vehicle, coverage.
+- Caller speaks → live transcript scrolls.
+- Pillars tick green ("Claim Type", "Date / Time", "Treatment Received"…) as Jamie hears the answers.
+- Tavily fires in the background — Jamie casually quotes a real local condition.
+- Final claim JSON exports cleanly at the end of the call.
 
-## Slide 7 · Architecture (0:58 – 1:12)
+Optional voiceover during the demo (light touch, don't over-narrate):
 
-> *"Under the hood: Twilio SIP into a LiveKit room. Gradium does STT and TTS — Emma voice. Gemini is the brain, with auto-rotation across the model family because Google's free tier melted down mid-hackathon. The system prompt rebuilds every turn with fresh context. Tavily handles the magic 'I see on my system' moments. Pioneer's GLiNER2 plus a Gemini-Lite extractor pull the claim file in parallel. Lovable rendered the dashboard. The brain is provider-pluggable — when Gemini died at 6 PM yesterday we proved it by flipping to local Ollama in one env var."*
+> *"Jamie answers. She knows the caller's name, policy, vehicle. As Sofia speaks, the claim file fills itself in real time. When she names her hospital, Jamie quietly checks live conditions and references them — that's the moment a juror stops being suspicious."*
 
----
-
-## Slide 8 · Side bounties (1:12 – 1:24)
-
-> *"Side challenges, woven into the architecture. Aikido's been scanning since commit zero — twelve PII patterns redacted before anything touches a log, because insurance is GDPR Article 9 health data. Entire wrote our build journal — every architectural decision is in docs/entire-dispatches. Gradium runs in three integration tiers, all real. Pioneer is the speed lane: GLiNER2 at 47 milliseconds versus Gemini-Lite at 300 — the benchmark table is in the repo."*
-
----
-
-## Slide 9 · Closing (1:24 – 1:34)
-
-> *"Caution Claims. Same engine, any insurance line. Built to cross fifty percent. 32BitSavvy — Het Patel and Viraj Dalsania."*
-
-Hold the closing slide for 5 seconds with the repo URL on screen.
+End the cut showing the FINAL CLAIM EXPORT panel with the JSON.
 
 ---
 
-## Auto-advance mode
+## Slide 3 · How it works (1:30 – 1:44)
 
-The deck supports timed auto-advance via `data-dur` on each slide. The current durations sum to **~94 seconds**, which leaves ~26 seconds for the dashboard cut between slides 5 and 6. If you want the deck to advance itself while you record voiceover, press **`A`** to toggle.
+> *"Under the hood, five steps. Twilio and LiveKit carry the call. Gradium does STT and TTS — Emma voice. Gemini is the brain, with CRM and tool results injected on every turn — and it auto-rotates models when Google's free tier dies. Tavily handles the magic 'I see on my system' moments. Pioneer's GLiNER2 plus a Gemini-Lite extractor pull the claim file into the Lovable dashboard. Five partners, all real, all shipped."*
 
-If you'd rather drive it manually with a remote (or with the spacebar), don't press A — just record yourself clicking through.
+---
 
-## Keyboard shortcuts
+## Slide 4 · Side bounties + close (1:44 – 1:58)
+
+> *"Side challenges, woven in. Aikido — twelve PII patterns redacted because insurance is GDPR Article 9 health data. Entire wrote our build journal as we built. Gradium runs in three integration tiers, all real. Pioneer's GLiNER2 is the speed lane: 47 milliseconds versus 300 for Gemini-Lite — the benchmark is in the repo. EchoClaim. github dot com slash IamHetPatel slash AI dash voice dash Agent."*
+
+Hold the closing strip on screen for ~3 seconds with the URL visible.
+
+---
+
+## Auto-advance vs. manual
+
+- Press **`A`** to start auto-advance — the deck times itself per the `data-dur` on each slide. Use this if you want hands-free.
+- Or just press **`→`** at each beat. Recommended for the dashboard cut: turn off auto so you can hold slide 2 for as long as the demo runs.
+
+## Logo
+
+The deck draws a stylised SVG approximation of the EchoClaim logo by default. To use your real PNG, save it at:
+
+```
+docs/pitch/echoclaim-logo.png
+```
+
+The HTML auto-detects it on load and swaps the SVG out — no code change needed.
+
+## Keyboard
 
 | Key | Action |
 |---|---|
-| `→` / `Space` / `PgDn` | Next slide |
-| `←` / `PgUp` | Previous slide |
+| `→` / `Space` | Next slide |
+| `←` | Previous slide |
 | `A` | Toggle auto-advance |
 | `F` | Toggle fullscreen |
-| `Home` / `End` | Jump to first / last slide |
 | `?` | Hide / show the help hint |
 | `Esc` | Cancel auto-advance |
-
-## Click navigation
-
-- Click left third of the slide → previous
-- Click right two-thirds → next
