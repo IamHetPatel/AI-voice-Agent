@@ -161,7 +161,19 @@ class ExtractionService:
             "elapsed_ms": round(elapsed_ms, 2),
             "mode":       self._mode,
             "model":      self.model_name,
+            "emotional_state": _detect_emotion(text),
         }
+
+
+# ── Emotion detection ─────────────────────────────────────────────────────────
+_RE_DISTRESSED = re.compile(r"\b(pain|hurt|emergency|scared|help|please|crying|ambulance|bleeding|broken|dying|shaking|frightened|chest\s+pain|headache)\b", re.I)
+_RE_NOISY      = re.compile(r"\b(can't\s+hear|loud|background|noise|static|interference|wind|highway|traffic)\b", re.I)
+
+def _detect_emotion(text: str) -> str:
+    lower = text.lower()
+    if _RE_DISTRESSED.search(lower): return "distressed"
+    if _RE_NOISY.search(lower):      return "noisy"
+    return "calm"
 
 
 # ── Async streaming wrapper ───────────────────────────────────────────────────
@@ -204,10 +216,12 @@ _RE_AMBULANCE   = re.compile(r"\b(ambulance|paramedic|Rettungswagen|Notarzt)\b",
 _RE_POLICE_NUM  = re.compile(r"\b(?:case|reference|report)\s*(?:number|no\.?|#)?\s*[:#]?\s*(\w{4,})\b", re.I)
 _RE_FAULT       = re.compile(r"\b(my fault|their fault|I caused|they caused|ran the red|Schuld|verschuldet)\b", re.I)
 _RE_WITNESS     = re.compile(r"\b(witness(?:es)?|bystander|passerby|Zeuge)\b", re.I)
-_RE_CLAIM_AUTO  = re.compile(r"\b(car|auto|vehicle|automobile|accident|crash|collision|KFZ|Unfall|Fahrzeug)\b", re.I)
-_RE_CLAIM_HEALTH= re.compile(r"\b(health\s+insurance|medical\s+claim|illness|sick|Krankenkasse|Krankenversicherung|Gesundheit)\b", re.I)
+_RE_CLAIM_AUTO  = re.compile(r"\b(car|auto|vehicle|automobile|accident|crash|collision|KFZ|Unfall|Fahrzeug|motor)\b", re.I)
+_RE_CLAIM_HEALTH= re.compile(r"\b(health|medical|illness|sick|Krankenkasse|Krankenversicherung|Gesundheit|fracture|surgery|doctor|hospital|clinic|injury|injured)\b", re.I)
 _RE_DELAY       = re.compile(r"\b(\d+)\s+(weeks?|months?|days?)\s+ago\b", re.I)
 _RE_SETTLEMENT  = re.compile(r"\b(repair\s+shop|body\s+shop|reimburs|direct\s+payment|Werkstatt|Erstattung)\b", re.I)
+_RE_HAPPENED    = re.compile(r"\b(crashed|hit|collided|fell|slipped|tripped|broke|started\s+to\s+pain|attack|seizure|emergency|accident|incident|Unfall|Sturz|Schmerzen)\b", re.I)
+_RE_REL_TIME    = re.compile(r"\b(just\s+now|a\s+moment\s+ago|an\s+hour\s+ago|\d+\s+minutes\s+ago|this\s+morning|last\s+night|today|yesterday)\b", re.I)
 
 
 def _regex_extract(text: str) -> tuple[dict[str, Extraction], dict[str, Extraction]]:
@@ -220,11 +234,9 @@ def _regex_extract(text: str) -> tuple[dict[str, Extraction], dict[str, Extracti
 
     # claim_type — detect early so downstream can branch
     if _RE_CLAIM_HEALTH.search(text):
-        add(pillars, "claim_type", "health", 0.70)
-    if _RE_CLAIM_AUTO.search(text):
-        # only overwrite if not already marked health
-        if "claim_type" not in pillars:
-            add(pillars, "claim_type", "auto", 0.65)
+        add(pillars, "claim_type", "health", 0.85)
+    elif _RE_CLAIM_AUTO.search(text):
+        add(pillars, "claim_type", "auto", 0.65)
 
     # incident_datetime
     for m in _RE_DATE.finditer(text):
@@ -243,6 +255,14 @@ def _regex_extract(text: str) -> tuple[dict[str, Extraction], dict[str, Extracti
     # injuries_or_symptoms
     for m in _RE_INJURY.finditer(text):
         add(pillars, "injuries_or_symptoms", m.group(0), 0.78)
+
+    # how_it_happened
+    for m in _RE_HAPPENED.finditer(text):
+        add(pillars, "how_it_happened", m.group(0), 0.65)
+
+    # more flexible relative time
+    for m in _RE_REL_TIME.finditer(text):
+        add(pillars, "incident_datetime", m.group(0), 0.60)
 
     # treatment_received
     for m in _RE_TREATMENT.finditer(text):

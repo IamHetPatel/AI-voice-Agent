@@ -3,7 +3,6 @@ import { useJamieSocket } from './hooks/useJamieSocket'
 import JamieAvatar   from './components/JamieAvatar'
 import Transcript    from './components/Transcript'
 import ClaimProgress from './components/ClaimProgress'
-import FraudGauge    from './components/FraudGauge'
 import styles        from './App.module.css'
 
 /* ── 3D tilt ──────────────────────────────────────────────── */
@@ -92,15 +91,16 @@ function CRMPanel({ crm }) {
   const rows = [
     ['👤', 'Name',    p.name],
     ['🎂', 'DOB',     p.dob],
-    ['📞', 'Phone',   p.phone],
     ['📄', 'Policy',  crm.policy?.policy_number],
     ['📦', 'Product', crm.policy?.product],
-    ['🚗', 'Vehicle', `${v.make||''} ${v.model||''}`.trim() || null],
-    ['🪪', 'Plate',   v.plate],
     ['🛡', 'Coverage',c.type],
   ].filter(([,, v]) => v)
   return (
     <div className={styles.crm}>
+      <div style={{ display:'flex', alignItems:'center', gap:'6px', marginBottom:'12px', paddingBottom:'8px', borderBottom:'1px solid rgba(255,255,255,0.05)' }}>
+        <span style={{ fontSize:'12px' }}>🔒</span>
+        <span style={{ fontSize:'10px', fontWeight:700, letterSpacing:'1px', color:'#10b981' }}>VERIFIED POLICYHOLDER</span>
+      </div>
       {rows.map(([icon, k, v]) => (
         <div key={k} className={styles.crmRow}>
           <span className={styles.crmIcon}>{icon}</span>
@@ -132,15 +132,49 @@ function MapPanel({ location }) {
 function FinalClaim({ claim }) {
   const [copied, setCopied] = useState(false)
   if (!claim) return <div className={styles.empty}>Available at call end</div>
+  
   const copy = () => {
     navigator.clipboard.writeText(JSON.stringify(claim, null, 2))
     setCopied(true); setTimeout(() => setCopied(false), 2000)
   }
+  
+  const playSummary = () => {
+    try {
+      const p = claim.pillars || {}
+      // Robustly get values regardless of nesting
+      const getVal = (id) => p[id]?.value || p[id] || ''
+      
+      const summaryParts = [
+        `Claim summary for ${claim.type || 'insurance'} incident.`,
+        getVal('incident_datetime') ? `Occurred on ${getVal('incident_datetime')}.` : '',
+        getVal('incident_location') ? `At ${getVal('incident_location')}.` : '',
+        getVal('injuries_or_symptoms') ? `Injuries noted: ${getVal('injuries_or_symptoms')}.` : '',
+        getVal('how_it_happened') ? `Context: ${getVal('how_it_happened')}.` : '',
+        `Status: All required information gathered and forwarded to adjuster.`
+      ].filter(s => s)
+
+      const text = summaryParts.join(' ')
+      console.log('Playing summary:', text)
+      
+      window.speechSynthesis.cancel() // Stop any current speech
+      const msg = new SpeechSynthesisUtterance(text)
+      msg.rate = 0.95; msg.pitch = 1.0; msg.volume = 1.0
+      window.speechSynthesis.speak(msg)
+    } catch (err) {
+      console.error('TTS failed:', err)
+    }
+  }
+
   return (
     <div className={styles.claimJSON}>
-      <button className={styles.copyBtn} onClick={copy}>
-        {copied ? '✓ Copied!' : '⊕ Copy JSON'}
-      </button>
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+        <button className={styles.copyBtn} style={{ flex: 1, marginBottom: 0 }} onClick={copy}>
+          {copied ? '✓ Copied!' : '⊕ Copy JSON'}
+        </button>
+        <button className={styles.copyBtn} style={{ flex: 1, marginBottom: 0 }} onClick={playSummary}>
+          🔊 Play Summary
+        </button>
+      </div>
       <pre className={styles.json}>{JSON.stringify(claim, null, 2)}</pre>
     </div>
   )
@@ -172,12 +206,7 @@ export default function App() {
 
   /* Glow on new data */
   const [glowClaim, setGC] = useState(false)
-  const [glowFraud, setGF] = useState(false)
   useEffect(() => { setGC(true); setTimeout(()=>setGC(false),900) }, [filled])
-  useEffect(() => {
-    if (!Object.keys(fraud).length) return
-    setGF(true); setTimeout(()=>setGF(false),900)
-  }, [Object.keys(fraud).length])
 
   const totalPillars = filled  // updated dynamically by ClaimProgress component
 
@@ -221,13 +250,12 @@ export default function App() {
               <div className={styles.chipLabel}>Pillars</div>
               <div className={styles.chipVal}>{filled}</div>
             </div>
-            <div className={styles.chip}>
-              <div className={styles.chipLabel}>Fraud</div>
-              <div className={styles.chipVal} style={{color: Object.keys(fraud).length ? '#f59e0b':'#10b981'}}>
-                {Object.keys(fraud).length}
+            {callStartTime && (
+              <div className={styles.timerBadge}>
+                <span style={{ color: '#10b981', marginRight: '6px', fontSize: '9px', fontWeight: 800 }}>⚡ DSP LIVE</span>
+                {timer}
               </div>
-            </div>
-            {callActive && <div className={styles.timerBadge}>{timer}</div>}
+            )}
           </div>
         </div>
       </header>
@@ -267,12 +295,6 @@ export default function App() {
           <Tilt intensity={5}>
             <Card title="Claim Pillars" badge={`${filled}`} glow={glowClaim} accent="#10b981" className={styles.claimCard}>
               <ClaimProgress pillars={pillars}/>
-            </Card>
-          </Tilt>
-
-          <Tilt intensity={5}>
-            <Card title="Fraud Risk" glow={glowFraud} accent="#ef4444">
-              <FraudGauge fraud={fraud}/>
             </Card>
           </Tilt>
         </aside>
