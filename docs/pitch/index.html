@@ -1,0 +1,910 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Caution Claims — Inca Human Test · 32BitSavvy</title>
+<meta name="viewport" content="width=1920, initial-scale=1" />
+<style>
+  /* ── Brand palette: matches the Caution Claims dashboard ─────── */
+  :root {
+    --bg-1:        #0a0a18;
+    --bg-2:        #131129;
+    --panel:       #1a1633;
+    --panel-2:     #221c45;
+    --border:      #2c2454;
+    --ink:         #f1edff;
+    --ink-dim:     #b9b1d9;
+    --muted:       #7d76a3;
+
+    --violet:      #8b5cf6;
+    --violet-soft: #a78bfa;
+    --violet-deep: #6d28d9;
+
+    --pink:        #ec4899;
+    --cyan:        #22d3ee;
+    --green:       #4ade80;
+    --amber:       #fbbf24;
+    --red:         #f87171;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    height: 100%;
+    background: var(--bg-1);
+    color: var(--ink);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont,
+                 'Segoe UI', system-ui, sans-serif;
+    font-feature-settings: 'cv11', 'ss01', 'ss03';
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── Stage: 16:9 deck ───────────────────────────────────────── */
+  .deck {
+    position: fixed;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    background:
+      radial-gradient(ellipse 80% 60% at 70% 0%,
+        rgba(139, 92, 246, 0.18) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 80% at 0% 100%,
+        rgba(236, 72, 153, 0.12) 0%, transparent 60%),
+      linear-gradient(135deg, var(--bg-1), var(--bg-2));
+  }
+
+  .stage {
+    width: min(95vw, 1760px);
+    aspect-ratio: 16 / 9;
+    position: relative;
+    overflow: hidden;
+    border-radius: 18px;
+    border: 1px solid rgba(139, 92, 246, 0.20);
+    background: linear-gradient(135deg,
+      rgba(20, 17, 41, 0.7),
+      rgba(13, 11, 26, 0.7));
+    backdrop-filter: blur(8px);
+    box-shadow:
+      0 30px 80px -20px rgba(139, 92, 246, 0.35),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+
+  .slide {
+    position: absolute;
+    inset: 0;
+    padding: 5.5vmin 6vmin;
+    display: flex;
+    flex-direction: column;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity .45s ease, transform .45s ease;
+    pointer-events: none;
+  }
+  .slide.is-current {
+    opacity: 1;
+    transform: none;
+    pointer-events: auto;
+  }
+
+  /* ── Top bar (slide chrome) ─────────────────────────────────── */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 4vmin;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    font-size: 1.6vmin;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+  }
+  .brand .logo {
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, var(--violet), var(--pink));
+    display: grid; place-items: center;
+    font-family: serif;
+    font-style: italic;
+    font-weight: 700;
+    font-size: 18px;
+    color: white;
+  }
+  .brand strong { color: var(--ink); font-weight: 800; }
+  .brand em { font-style: normal; color: var(--violet-soft); }
+
+  .pageno {
+    font-variant-numeric: tabular-nums;
+    color: var(--muted);
+    font-size: 1.4vmin;
+    letter-spacing: 0.5px;
+  }
+
+  /* ── Typography scales ─────────────────────────────────────── */
+  h1 { font-size: 11.5vmin; line-height: 0.96; letter-spacing: -0.02em; font-weight: 800; }
+  h2 { font-size: 7vmin;    line-height: 1.05; letter-spacing: -0.01em; font-weight: 700; }
+  h3 { font-size: 4vmin;    line-height: 1.1;  font-weight: 700; }
+  h4 { font-size: 2.6vmin;  line-height: 1.2;  font-weight: 600; color: var(--violet-soft); }
+  p, li, td, th { font-size: 2.1vmin; line-height: 1.45; }
+  .lead   { font-size: 3.2vmin; color: var(--ink-dim); line-height: 1.4; }
+  .small  { font-size: 1.6vmin; color: var(--muted); }
+
+  .accent { color: var(--violet); }
+  .accent-pink { color: var(--pink); }
+  .accent-cyan { color: var(--cyan); }
+
+  /* ── Layout helpers ────────────────────────────────────────── */
+  .body  { flex: 1; display: flex; flex-direction: column; gap: 3vmin; }
+  .grow  { flex: 1; }
+  .row   { display: flex; gap: 3vmin; }
+  .col   { display: flex; flex-direction: column; gap: 1.5vmin; }
+  .gap-l { gap: 4vmin; }
+  .gap-s { gap: 1vmin; }
+  .center { display: grid; place-items: center; text-align: center; }
+
+  .footer {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-top: auto;
+    color: var(--muted);
+    font-size: 1.5vmin;
+  }
+
+  .pill {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 6px 12px; border-radius: 999px;
+    background: rgba(139, 92, 246, 0.12);
+    border: 1px solid rgba(139, 92, 246, 0.35);
+    color: var(--violet-soft);
+    font-size: 1.5vmin;
+    font-weight: 500;
+  }
+  .pill .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 12px var(--green);
+  }
+  .pill.live { background: rgba(74, 222, 128, 0.10); border-color: rgba(74, 222, 128, 0.35); color: #a7f3d0; }
+
+  /* ── Cards / generic blocks ────────────────────────────────── */
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 3vmin;
+    display: flex;
+    flex-direction: column;
+    gap: 1.4vmin;
+    position: relative;
+    overflow: hidden;
+  }
+  .card .badge {
+    position: absolute; top: 14px; right: 14px;
+    padding: 4px 10px; border-radius: 999px;
+    font-size: 1.1vmin; letter-spacing: .8px; text-transform: uppercase;
+    background: rgba(139, 92, 246, 0.18);
+    color: var(--violet-soft);
+    border: 1px solid rgba(139, 92, 246, 0.25);
+  }
+  .card .icon { font-size: 5vmin; line-height: 1; }
+  .card .title { font-size: 2.4vmin; font-weight: 700; color: var(--ink); }
+  .card .sub { color: var(--muted); font-size: 1.7vmin; }
+  .card .quote {
+    font-size: 1.9vmin;
+    color: var(--ink-dim);
+    font-style: italic;
+    border-left: 3px solid var(--violet);
+    padding-left: 1.4vmin;
+    line-height: 1.4;
+  }
+
+  /* ── Slide-specific: title slide ───────────────────────────── */
+  .title-stage { justify-content: center; align-items: center; gap: 3vmin; text-align: center; }
+  .title-stage .super {
+    color: var(--violet-soft);
+    text-transform: uppercase;
+    letter-spacing: 0.3em;
+    font-size: 1.8vmin;
+    font-weight: 600;
+  }
+  .title-stage .heading {
+    font-size: 14vmin; line-height: 0.92; font-weight: 800;
+    background: linear-gradient(135deg, #f1edff 30%, var(--violet-soft) 70%, var(--pink) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    letter-spacing: -0.025em;
+  }
+  .title-stage .heading em {
+    font-style: normal;
+    background: linear-gradient(135deg, var(--violet), var(--pink));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .title-stage .tagline { color: var(--ink-dim); font-size: 3vmin; max-width: 80%; line-height: 1.3; }
+  .title-stage .meta {
+    display: flex; gap: 2.5vmin; align-items: center; flex-wrap: wrap; justify-content: center;
+    color: var(--muted); font-size: 1.7vmin;
+  }
+  .title-stage .meta .dotsep { color: var(--violet-deep); }
+
+  /* ── Slide 2: the problem (blockquote) ─────────────────────── */
+  .quote-big {
+    font-size: 7vmin;
+    line-height: 1.1;
+    font-weight: 700;
+    background: linear-gradient(135deg, #f1edff 0%, var(--violet-soft) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    letter-spacing: -0.01em;
+    max-width: 90%;
+  }
+  .quote-attrib { color: var(--muted); font-size: 1.7vmin; margin-top: 2vmin; }
+
+  /* ── Slide 5: domain cards row ─────────────────────────────── */
+  .domain-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2.5vmin;
+    margin-top: 2vmin;
+  }
+  .domain-card {
+    background: linear-gradient(180deg, var(--panel-2), var(--panel));
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 3vmin;
+    display: flex;
+    flex-direction: column;
+    gap: 1.6vmin;
+    min-height: 38vmin;
+    position: relative;
+    overflow: hidden;
+  }
+  .domain-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 80% -10%,
+      rgba(139, 92, 246, 0.18), transparent 60%);
+    pointer-events: none;
+  }
+  .domain-card .emoji { font-size: 7vmin; line-height: 1; }
+  .domain-card .name { font-size: 2.6vmin; font-weight: 700; }
+  .domain-card .tag  { color: var(--violet-soft); font-size: 1.5vmin; text-transform: uppercase; letter-spacing: 0.15em; }
+  .domain-card .quote {
+    font-style: italic;
+    color: var(--ink-dim);
+    font-size: 1.9vmin;
+    line-height: 1.4;
+    margin-top: auto;
+    padding: 1.5vmin;
+    background: rgba(139, 92, 246, 0.08);
+    border-radius: 8px;
+    border-left: 3px solid var(--violet);
+  }
+
+  /* ── Slide 6: architecture diagram ─────────────────────────── */
+  .arch {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 2vmin;
+    align-items: stretch;
+    margin-top: 2vmin;
+  }
+  .arch-col {
+    display: flex;
+    flex-direction: column;
+    gap: 1vmin;
+  }
+  .arch-row-title {
+    font-size: 1.4vmin;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: var(--muted);
+    margin-bottom: 0.5vmin;
+  }
+  .arch-node {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.6vmin 2vmin;
+    font-size: 1.9vmin;
+    color: var(--ink);
+    display: flex; align-items: center; gap: 12px;
+    line-height: 1.2;
+  }
+  .arch-node .dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--violet);
+    flex: none;
+  }
+  .arch-node.input  .dot { background: var(--cyan); }
+  .arch-node.brain  .dot { background: var(--violet); }
+  .arch-node.output .dot { background: var(--pink); }
+  .arch-node small { color: var(--muted); font-size: 1.4vmin; margin-left: auto; }
+
+  .arch-flow {
+    margin-top: 2vmin;
+    display: flex;
+    gap: 1.5vmin;
+    align-items: center;
+    flex-wrap: wrap;
+    color: var(--muted);
+    font-size: 1.6vmin;
+  }
+  .arch-flow .arr { color: var(--violet); font-weight: 600; }
+
+  /* ── Slide 7: bounty grid ──────────────────────────────────── */
+  .bounty-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2vmin;
+    margin-top: 2vmin;
+  }
+  .bounty {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 2.4vmin 2.6vmin;
+    display: flex;
+    flex-direction: column;
+    gap: 0.8vmin;
+  }
+  .bounty .b-title { font-size: 2.4vmin; font-weight: 700; }
+  .bounty .b-line { color: var(--ink-dim); font-size: 1.7vmin; line-height: 1.35; }
+  .bounty .b-stat { color: var(--violet-soft); font-size: 1.5vmin; font-weight: 600; margin-top: auto; }
+
+  /* ── Slide 8: closing ──────────────────────────────────────── */
+  .closing {
+    display: flex; flex-direction: column; gap: 2.5vmin; text-align: center; justify-content: center; height: 100%;
+  }
+  .closing .url {
+    font-family: 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+    font-size: 4vmin;
+    color: var(--violet-soft);
+    background: rgba(139, 92, 246, 0.10);
+    padding: 1.5vmin 3vmin;
+    border-radius: 12px;
+    border: 1px solid rgba(139, 92, 246, 0.30);
+    display: inline-block;
+  }
+  .closing .team {
+    color: var(--ink-dim); font-size: 2.4vmin;
+  }
+  .closing .tag {
+    color: var(--violet-soft); font-size: 1.8vmin; letter-spacing: 0.3em; text-transform: uppercase;
+  }
+
+  /* ── Slide 4: insight ──────────────────────────────────────── */
+  .insight-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.6vmin;
+    margin-top: 2vmin;
+  }
+  .insight-row {
+    display: flex; align-items: baseline; gap: 1.6vmin;
+    padding: 1.8vmin 0;
+    border-bottom: 1px dashed var(--border);
+  }
+  .insight-row:last-child { border-bottom: none; }
+  .insight-row .num {
+    color: var(--violet);
+    font-weight: 800;
+    font-size: 3.5vmin;
+    font-variant-numeric: tabular-nums;
+    min-width: 5vmin;
+  }
+  .insight-row .text {
+    color: var(--ink); font-size: 2.6vmin; line-height: 1.3;
+  }
+  .insight-row .text em { font-style: normal; color: var(--violet-soft); }
+
+  /* ── Hook slide ────────────────────────────────────────────── */
+  .hook {
+    flex: 1; display: grid; place-items: center; text-align: center; gap: 4vmin;
+  }
+  .hook .big-arrow {
+    font-size: 22vmin;
+    line-height: 1;
+    background: linear-gradient(180deg, var(--violet), var(--pink));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: bounce 1.6s ease-in-out infinite;
+  }
+  @keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(20px); }
+  }
+  .hook h2 { color: var(--ink); }
+
+  /* ── Slide 3: stats / metrics ──────────────────────────────── */
+  .metrics {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2.5vmin;
+    margin-top: 4vmin;
+  }
+  .metric {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 3vmin;
+    text-align: center;
+  }
+  .metric .num {
+    font-size: 9vmin;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--violet-soft), var(--pink));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    line-height: 1;
+    letter-spacing: -0.03em;
+    font-variant-numeric: tabular-nums;
+  }
+  .metric .lbl { color: var(--ink-dim); font-size: 1.8vmin; margin-top: 1vmin; }
+
+  /* ── Caller / agent dialog ─────────────────────────────────── */
+  .dialog { display: flex; flex-direction: column; gap: 1vmin; max-width: 80%; margin: 0 auto; }
+  .bubble {
+    padding: 1.6vmin 2vmin;
+    border-radius: 14px;
+    font-size: 2.1vmin;
+    line-height: 1.4;
+    max-width: 78%;
+  }
+  .bubble.caller {
+    background: rgba(34, 211, 238, 0.10);
+    border: 1px solid rgba(34, 211, 238, 0.25);
+    color: #a5f3fc;
+    align-self: flex-start;
+    border-bottom-left-radius: 4px;
+  }
+  .bubble.jamie {
+    background: rgba(139, 92, 246, 0.14);
+    border: 1px solid rgba(139, 92, 246, 0.30);
+    color: var(--ink);
+    align-self: flex-end;
+    border-bottom-right-radius: 4px;
+  }
+
+  /* ── Auto-advance progress bar ─────────────────────────────── */
+  .progress {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 3px;
+    background: rgba(139, 92, 246, 0.10);
+    overflow: hidden;
+  }
+  .progress .fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--violet), var(--pink));
+    width: 0%;
+    transition: width 0.2s linear;
+  }
+
+  /* ── Hint chrome ───────────────────────────────────────────── */
+  .hint {
+    position: fixed;
+    bottom: 18px; right: 22px;
+    color: var(--muted);
+    font-size: 11px;
+    background: rgba(20, 17, 41, 0.7);
+    padding: 6px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    letter-spacing: 0.5px;
+    backdrop-filter: blur(8px);
+    z-index: 10;
+    transition: opacity 0.4s ease;
+  }
+  .hint.hide { opacity: 0; pointer-events: none; }
+  .hint kbd {
+    background: rgba(139, 92, 246, 0.15);
+    color: var(--violet-soft);
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    margin: 0 2px;
+  }
+
+  /* Print / PDF export — show all slides stacked */
+  @media print {
+    html, body { overflow: visible; height: auto; }
+    .deck { position: static; padding: 0; display: block; }
+    .stage { box-shadow: none; border: none; height: 100vh; page-break-after: always; border-radius: 0; }
+    .slide { position: relative; opacity: 1; transform: none; }
+    .hint { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="deck">
+  <div class="stage" id="stage">
+
+    <!-- ─── Slide 1: TITLE ────────────────────────────────────── -->
+    <section class="slide title-stage" data-dur="10">
+      <div class="super">Inca · The Human Test</div>
+      <div class="heading">Caution <em>Claims.</em></div>
+      <div class="tagline">A Turing-grade voice agent for inbound insurance claim calls.</div>
+      <div class="meta">
+        <span>32BitSavvy</span><span class="dotsep">•</span>
+        <span>Het Patel</span><span class="dotsep">•</span>
+        <span>Viraj Dalsania</span><span class="dotsep">•</span>
+        <span>Big Berlin Hack 2026</span>
+      </div>
+    </section>
+
+    <!-- ─── Slide 2: THE CHALLENGE ───────────────────────────── -->
+    <section class="slide" data-dur="9">
+      <div class="topbar">
+        <div class="brand"><span class="logo">In</span><span><strong>Caution</strong> <em>Claims</em></span></div>
+        <div class="pageno">02 / 08 · the brief</div>
+      </div>
+      <div class="body" style="justify-content: center;">
+        <h4>Inca's challenge</h4>
+        <div class="quote-big">
+          "Build a voice agent that fools jurors. Cross 50% on the human-vote.
+          Document the call. Stay consistent across dialects and noise."
+        </div>
+        <div class="quote-attrib">— Inca · The Human Test, Big Berlin Hack 2026</div>
+      </div>
+      <div class="footer">
+        <span>The jury is the caller. They vote blind.</span>
+        <span>32bitsavvy</span>
+      </div>
+    </section>
+
+    <!-- ─── Slide 3: THE STAKES ──────────────────────────────── -->
+    <section class="slide" data-dur="8">
+      <div class="topbar">
+        <div class="brand"><span class="logo">In</span><span><strong>Caution</strong> <em>Claims</em></span></div>
+        <div class="pageno">03 / 08 · the threshold</div>
+      </div>
+      <div class="body center" style="text-align: center; gap: 2vmin;">
+        <h2>To win, the agent has to&nbsp;<span class="accent">cross three lines</span>&nbsp;at once.</h2>
+        <div class="metrics">
+          <div class="metric">
+            <div class="num">&gt; 50<span style="font-size:5vmin">%</span></div>
+            <div class="lbl">jurors voting <strong>human</strong></div>
+          </div>
+          <div class="metric">
+            <div class="num">100<span style="font-size:5vmin">%</span></div>
+            <div class="lbl">claim documentation, captured live</div>
+          </div>
+          <div class="metric">
+            <div class="num">∞</div>
+            <div class="lbl">dialects · highway noise · panicked callers</div>
+          </div>
+        </div>
+      </div>
+      <div class="footer">
+        <span>Slides 4–6: how we hit them.</span><span>32bitsavvy</span>
+      </div>
+    </section>
+
+    <!-- ─── Slide 4: THE INSIGHT ─────────────────────────────── -->
+    <section class="slide" data-dur="11">
+      <div class="topbar">
+        <div class="brand"><span class="logo">In</span><span><strong>Caution</strong> <em>Claims</em></span></div>
+        <div class="pageno">04 / 08 · the insight</div>
+      </div>
+      <div class="body" style="justify-content: center;">
+        <h4>Why most voice bots fail the test</h4>
+        <h2>Real claims agents <em class="accent">don't ask stupid questions</em>.</h2>
+        <div class="lead" style="margin-top: 1vmin; max-width: 90%;">
+          Everything the company already knows about the caller — name, policy,
+          plate, coverage — is on their screen <em>before the phone rings</em>.
+          So is&nbsp;ours.
+        </div>
+        <div class="insight-grid">
+          <div class="insight-row">
+            <span class="num">01</span>
+            <div class="text"><em>Known</em> · CRM JSON injected into every system prompt — Jamie speaks from <em>knowledge</em>, never from a questionnaire.</div>
+          </div>
+          <div class="insight-row">
+            <span class="num">02</span>
+            <div class="text"><em>Heard</em> · Tracked-pillars buffer + asked-pillars set ⇒ no repeated questions, no list-walking.</div>
+          </div>
+          <div class="insight-row">
+            <span class="num">03</span>
+            <div class="text"><em>Looked-up</em> · Tavily fires invisibly on location — Jamie casually quotes real road conditions a juror can verify.</div>
+          </div>
+        </div>
+      </div>
+      <div class="footer">
+        <span>Architecture serves the illusion.</span><span>32bitsavvy</span>
+      </div>
+    </section>
+
+    <!-- ─── Slide 5: SAMPLE TURN (sets up the live demo cut) ─── -->
+    <section class="slide" data-dur="9">
+      <div class="topbar">
+        <div class="brand"><span class="logo">In</span><span><strong>Caution</strong> <em>Claims</em></span></div>
+        <div class="pageno">05 / 08 · what it sounds like</div>
+      </div>
+      <div class="body" style="justify-content: center;">
+        <h4>One actual call · health-claim intake</h4>
+        <div class="dialog">
+          <div class="bubble jamie">Allianz Privat — you're through to Jamie. I have your member record. How can I help today, Sofia?</div>
+          <div class="bubble caller">I'd like to submit a claim for physiotherapy. I had knee surgery in February.</div>
+          <div class="bubble jamie">Oh gosh, I'm sorry — knee surgery in February, that's been a journey. I see we already covered six physio sessions year-to-date. Is this the same course continuing?</div>
+          <div class="bubble caller">Yeah, twelve sessions total, March third through April eighteenth.</div>
+          <div class="bubble jamie">Got it — and the invoice total?</div>
+        </div>
+      </div>
+      <div class="footer">
+        <span>↓ Live demo cuts in here ↓</span><span>32bitsavvy</span>
+      </div>
+    </section>
+
+    <!-- ─── Slide 6: MULTI-DOMAIN ────────────────────────────── -->
+    <section class="slide" data-dur="11">
+      <div class="topbar">
+        <div class="brand"><span class="logo">In</span><span><strong>Caution</strong> <em>Claims</em></span></div>
+        <div class="pageno">06 / 08 · the platform play</div>
+      </div>
+      <div class="body">
+        <h4>Same engine. Different domain config.</h4>
+        <h2>Three insurance lines, shipping today.</h2>
+        <div class="domain-row">
+          <div class="domain-card">
+            <div class="emoji">🚗</div>
+            <div class="tag">car · FNOL</div>
+            <div class="name">Vorsicht Versicherung</div>
+            <div class="quote">"Rear-ended on the A4 near Köln-Ost — pouring rain."</div>
+          </div>
+          <div class="domain-card">
+            <div class="emoji">🩺</div>
+            <div class="tag">health · privatversichert</div>
+            <div class="name">Allianz Privat</div>
+            <div class="quote">"Twelve sessions of physio, post-surgery, March to April."</div>
+          </div>
+          <div class="domain-card">
+            <div class="emoji">🎒</div>
+            <div class="tag">theft · Hausrat</div>
+            <div class="name">Vorsicht Hausrat</div>
+            <div class="quote">"My Canyon was stolen outside the Späti at Hermannplatz."</div>
+          </div>
+        </div>
+        <p class="lead" style="margin-top: 1vmin; text-align: center;">
+          Drop in a JSON config &mdash; banking, telco, health-stat, anything &mdash; the engine re-targets itself.
+        </p>
+      </div>
+      <div class="footer"><span>Inca asked for broad. We went broad.</span><span>32bitsavvy</span></div>
+    </section>
+
+    <!-- ─── Slide 7: ARCHITECTURE ────────────────────────────── -->
+    <section class="slide" data-dur="14">
+      <div class="topbar">
+        <div class="brand"><span class="logo">In</span><span><strong>Caution</strong> <em>Claims</em></span></div>
+        <div class="pageno">07 / 08 · architecture</div>
+      </div>
+      <div class="body">
+        <h4>Stack — verified against real installs, every box committed</h4>
+        <div class="arch">
+          <div class="arch-col">
+            <div class="arch-row-title">caller side</div>
+            <div class="arch-node input"><span class="dot"></span>Twilio SIP &nbsp;→&nbsp; LiveKit room <small>SIP trunk</small></div>
+            <div class="arch-node input"><span class="dot"></span>Gradium STT <small>Emma family</small></div>
+          </div>
+          <div class="arch-col">
+            <div class="arch-row-title">jamie · the brain</div>
+            <div class="arch-node brain"><span class="dot"></span>Gemini · flash-latest <small>+ auto-rotate</small></div>
+            <div class="arch-node brain"><span class="dot"></span>build_jamie_system_prompt <small>per turn</small></div>
+            <div class="arch-node brain"><span class="dot"></span>Tavily lookups <small>weather · traffic · QA</small></div>
+            <div class="arch-node brain"><span class="dot"></span>Provider-pluggable <small>→ Ollama fallback</small></div>
+          </div>
+          <div class="arch-col">
+            <div class="arch-row-title">async + dashboard</div>
+            <div class="arch-node output"><span class="dot"></span>Gemini-Lite extractor <small>domain-aware</small></div>
+            <div class="arch-node output"><span class="dot"></span>GLiNER2 fallback <small>fastino · 47ms</small></div>
+            <div class="arch-node output"><span class="dot"></span>FastAPI WS bridge <small>fan-out</small></div>
+            <div class="arch-node output"><span class="dot"></span>Lovable dashboard <small>live UI</small></div>
+          </div>
+        </div>
+        <div class="arch-flow">
+          <span>partners shipped:</span>
+          <span class="pill">Deepmind · Gemini</span>
+          <span class="pill">Gradium · STT/TTS</span>
+          <span class="pill">Pioneer · GLiNER2</span>
+          <span class="pill">Tavily · context</span>
+          <span class="pill">Lovable · dashboard</span>
+        </div>
+      </div>
+      <div class="footer"><span>14 smoke tests · 12 PII patterns · 3 domains.</span><span>32bitsavvy</span></div>
+    </section>
+
+    <!-- ─── Slide 8: SIDE BOUNTIES ───────────────────────────── -->
+    <section class="slide" data-dur="12">
+      <div class="topbar">
+        <div class="brand"><span class="logo">In</span><span><strong>Caution</strong> <em>Claims</em></span></div>
+        <div class="pageno">08 / 08 · side bounties</div>
+      </div>
+      <div class="body">
+        <h4>Side challenges — woven in, not bolted on</h4>
+        <div class="bounty-grid">
+          <div class="bounty">
+            <div class="b-title">Aikido <span class="accent" style="font-size:1.6vmin">· €1000</span></div>
+            <div class="b-line">Repo connected at commit zero. <strong>12 PII patterns</strong> redacted before anything touches a log: policy #, VIN, plate, IBAN, credit card, SVNR, Krankenversichertennr, driver licence, phone, email, DOB.</div>
+            <div class="b-stat">aikido.yml · threat model · zero critical in data path</div>
+          </div>
+          <div class="bounty">
+            <div class="b-title">Entire</div>
+            <div class="b-line">Server-mode dispatch wired into <code>scripts/setup_entire.sh</code>. Every architectural decision committed at <code>docs/entire-dispatches/</code>. Our README is partly written by Entire.</div>
+            <div class="b-stat">entire enable · entire dispatch · 0 Anthropic credit burn</div>
+          </div>
+          <div class="bounty">
+            <div class="b-title">Gradium <span class="accent" style="font-size:1.6vmin">· credits</span></div>
+            <div class="b-line"><strong>Three integration tiers</strong>, all real: gradbot for laptop quickstart, gradium.GradiumClient for filler-audio batch, livekit-plugins-gradium TTS+STT for the production phone path.</div>
+            <div class="b-stat">Emma voice · multiplexing demo · STT temperature 0.0</div>
+          </div>
+          <div class="bounty">
+            <div class="b-title">Pioneer / Fastino <span class="accent" style="font-size:1.6vmin">· Mac Mini</span></div>
+            <div class="b-line"><strong>fastino/gliner2-base-v1</strong> as the speed/cost lane (47ms · free) versus Gemini-Lite structured output as the accuracy lane (300ms · $0.0015). Domain-aware label sets — the benchmark is in the repo.</div>
+            <div class="b-stat">extraction/benchmark.py · 3-domain F1 table</div>
+          </div>
+        </div>
+      </div>
+      <div class="footer"><span>Insurance handles GDPR Article 9 health data. We treated security as a feature.</span><span>32bitsavvy</span></div>
+    </section>
+
+    <!-- ─── Slide 9: CLOSING ─────────────────────────────────── -->
+    <section class="slide" data-dur="10">
+      <div class="topbar">
+        <div class="brand"><span class="logo">In</span><span><strong>Caution</strong> <em>Claims</em></span></div>
+        <div class="pageno">end</div>
+      </div>
+      <div class="body closing">
+        <div class="tag">Vote with your gut.</div>
+        <h1 style="font-size: 13vmin; background: linear-gradient(135deg, var(--violet-soft), var(--pink)); -webkit-background-clip: text; background-clip: text; color: transparent;">Caution Claims.</h1>
+        <div class="url">github.com/IamHetPatel/AI-voice-Agent</div>
+        <div class="team">
+          32BitSavvy &nbsp;·&nbsp; Het Patel &nbsp;·&nbsp; Viraj Dalsania
+        </div>
+        <div class="small" style="margin-top: 2vmin; opacity: 0.7;">
+          Big Berlin Hack 2026 &nbsp;·&nbsp; Inca &nbsp;·&nbsp; The Human Test
+        </div>
+      </div>
+    </section>
+
+    <!-- progress bar (auto-advance only) -->
+    <div class="progress" id="progress" style="display:none"><div class="fill" id="progress-fill"></div></div>
+  </div>
+</div>
+
+<div class="hint" id="hint">
+  <kbd>→</kbd> next &nbsp; <kbd>←</kbd> prev &nbsp; <kbd>A</kbd> auto-play &nbsp; <kbd>F</kbd> fullscreen &nbsp; <kbd>?</kbd> hide
+</div>
+
+<script>
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const hint = document.getElementById('hint');
+  const progressEl = document.getElementById('progress');
+  const progressFill = document.getElementById('progress-fill');
+  let idx = 0;
+  let auto = false;
+  let autoTimer = null;
+  let progressTimer = null;
+
+  function show(i) {
+    idx = ((i % slides.length) + slides.length) % slides.length;
+    slides.forEach((s, j) => s.classList.toggle('is-current', j === idx));
+    if (auto) startAutoForCurrent();
+  }
+
+  function startAutoForCurrent() {
+    if (autoTimer) clearTimeout(autoTimer);
+    if (progressTimer) clearInterval(progressTimer);
+    progressEl.style.display = 'block';
+    progressFill.style.width = '0%';
+
+    const dur = parseFloat(slides[idx].dataset.dur || '8') * 1000;
+    const startedAt = Date.now();
+
+    progressTimer = setInterval(() => {
+      const elapsed = Date.now() - startedAt;
+      const pct = Math.min(100, (elapsed / dur) * 100);
+      progressFill.style.width = pct + '%';
+    }, 100);
+
+    autoTimer = setTimeout(() => {
+      if (idx === slides.length - 1) {
+        // last slide: stop auto-play
+        toggleAuto(false);
+        return;
+      }
+      show(idx + 1);
+    }, dur);
+  }
+
+  function toggleAuto(force) {
+    auto = (force === undefined) ? !auto : force;
+    if (auto) {
+      startAutoForCurrent();
+    } else {
+      if (autoTimer) clearTimeout(autoTimer);
+      if (progressTimer) clearInterval(progressTimer);
+      progressEl.style.display = 'none';
+    }
+  }
+
+  function fullscreen() {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen?.().catch(() => {});
+    } else {
+      document.exitFullscreen?.();
+    }
+  }
+
+  document.addEventListener('keydown', (e) => {
+    switch (e.key) {
+      case 'ArrowRight':
+      case ' ':
+      case 'PageDown':
+        show(idx + 1);
+        if (auto) toggleAuto(false);  // manual nav cancels auto
+        break;
+      case 'ArrowLeft':
+      case 'PageUp':
+        show(idx - 1);
+        if (auto) toggleAuto(false);
+        break;
+      case 'Home':
+        show(0);
+        break;
+      case 'End':
+        show(slides.length - 1);
+        break;
+      case 'a':
+      case 'A':
+        toggleAuto();
+        break;
+      case 'f':
+      case 'F':
+        fullscreen();
+        break;
+      case '?':
+      case '/':
+        hint.classList.toggle('hide');
+        break;
+      case 'Escape':
+        if (auto) toggleAuto(false);
+        break;
+    }
+  });
+
+  // Click to advance
+  document.getElementById('stage').addEventListener('click', (e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    if (x < rect.width / 3) show(idx - 1);
+    else show(idx + 1);
+    if (auto) toggleAuto(false);
+  });
+
+  // auto-hide the hint after 6s of no key press
+  let hintTimer = setTimeout(() => hint.classList.add('hide'), 6000);
+  document.addEventListener('mousemove', () => {
+    hint.classList.remove('hide');
+    clearTimeout(hintTimer);
+    hintTimer = setTimeout(() => hint.classList.add('hide'), 4000);
+  });
+
+  // Boot
+  show(0);
+</script>
+
+</body>
+</html>
